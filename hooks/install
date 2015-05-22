@@ -1,0 +1,21 @@
+#!/usr/bin/python
+
+import setup
+setup.pre_install()
+
+import devstack
+
+from charmhelpers.core import hookenv
+
+
+def install():
+    hookenv.log('Installing devstack')
+    # add steps for installing dependencies and packages here
+    # e.g.: from charmhelpers import fetch
+    #       fetch.apt_install(fetch.filter_installed_packages(['nginx']))
+    devstack.install_extra_packages()
+    devstack.sync_time()
+
+
+if __name__ == "__main__":
+    install()

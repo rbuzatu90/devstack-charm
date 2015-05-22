@@ -1,0 +1,93 @@
+options:
+  zuul-url:
+    type: string
+    description: "The zuul URL from which we fetch the git repositories"
+  zuul-branch:
+    type: string
+    description: |
+      "Branch we are testing (master, stable/juno, stable/kilo, etc)"
+  zuul-change:
+    type: string
+    description: "patches we are testing"
+  zuul-ref:
+    type: string
+    description: "zuul reference number"
+  zuul-project:
+    type: string
+    description: "Project we are testing (openstack/nova, openstack/neutron, etc)"
+  vlan-range:
+    type: string
+    description: "vlan ranges to alocate"
+  static-mirror:
+    type: string
+    description: "Location that holds static files like cirros/fedora images"
+  pypi-mirror:
+    type: string
+    description: "PyPi mirror to use"
+  public-interface:
+    type: string
+    default: "eth2"
+    description: "External interface"
+  guest-interface:
+    type: string
+    default: "eth1"
+    description: "Data port. This is the interface that is used for guest L2 traffic"
+  disable-ipv6:
+    type: boolean
+    default: True
+    description: "By default devstack runs in dual stack mode. This option forces devstack to only use IPv4"
+  ml2-mechanism:
+    type: string
+    default: "openvswitch,hyperv"
+    description: "Mechanism drivers to use for neutron"
+  tenant-network-type:
+    type: string
+    default: "vlan"
+    description: |
+      Tenan isolation type. Options are:
+      * vlan
+      * vxlan
+      * gre
+      * local
+  locarc-extra-blob:
+    type: string
+    description: "This blob will be appended at the end of local.conf"
+  enable-tunneling:
+    type: boolean
+    default: False
+    description: "Enable or disable tunneling"
+  enable-vlans:
+    type: boolean
+    default: True
+    description: "Enable or disable vlan support"
+  enable-live-migration:
+    type: boolean
+    default: False
+    description: "Enable or disable live migration"
+  ceilometer-backend:
+    type: string
+    default: "mongodb"
+    description: "Database backend to use for ceilometer"
+  verbose:
+    type: boolean
+    default: True
+    description: "Verbose output"
+  debug:
+    type: boolean
+    default: True
+    description: "Debug output"
+  same-host-resize:
+    type: boolean
+    default: True
+    description: |
+      Allow same host resize. The allow_resize_to_same_host will be set both
+      in the devstack nova.conf and in the remote compute node config. This option
+      will be advertised as part of the relationship information.
+  test-image-url:
+    type: string
+    default: "file:///home/ubuntu/devstack/files/images/cirros-0.3.3-x86_64.vhdx"
+    description: "Tempest test image URL"
+  heat-image-url:
+    type: string
+    default: "file:///home/ubuntu/devstack/files/images/Fedora-x86_64-20-20140618-sda.vhdx"
+    description: "Heat test image URL"
