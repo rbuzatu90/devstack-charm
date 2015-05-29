@@ -1,19 +1,11 @@
 name: devstack
-summary: <Fill in summary here>
-maintainer: ubuntu <ubuntu@maas>
+summary: "devstack charm"
+maintainer: Gabriel Adrian Samfira <gsamfira@cloudbasesolutions.com>
 description: |
-  <Multi-line description here>
+  This charm is meant to be used as part of a CI environment.
 tags:
-  # Replace "misc" with one or more whitelisted tags from this list:
-  # https://juju.ubuntu.com/docs/authors-charm-metadata.html#charm-metadata
-  - misc
+  - CI
 subordinate: false
 provides:
-  provides-relation:
-    interface: interface-name
-requires:
-  requires-relation:
-    interface: interface-name
-peers:
-  peer-relation:
-    interface: interface-name
+  devstack:
+    interface: devstack

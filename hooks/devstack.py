@@ -3,6 +3,7 @@ import pwd
 import os
 import urlparse
 import string
+import ConfigParser
 
 from os import urandom
 from itertools import islice, imap, repeat
@@ -19,6 +20,12 @@ LOCALTIME = "/etc/localtime"
 SUDOERSD = "/etc/sudoers.d"
 STACK_LOCATION = "/opt/stack"
 DEFAULT_USER = "ubuntu"
+KEYSTONERC = """
+export OS_USERNAME=admin
+export OS_TENANT_NAME=admin
+export OS_PASSWORD=%s
+export OS_AUTH_URL=http://127.0.0.1:35357/v2.0/
+"""
 
 
 class ExecException(Exception):
@@ -161,7 +168,24 @@ class Devstack(object):
         self.pwd = pwd.getpwnam(self.username)
         self.project = Project(username=self.username)
         self.config = hookenv.config()
-        self.password = rand_string(32)
+
+    @property
+    def rabbit_user(self):
+        branch = self.config.get('zuul-branch')
+        if branch in ("stable/icehouse", "stable/juno"):
+            return "guest"
+        return "stackrabbit"
+
+    @property
+    def password(self):
+        devstack_passwd = os.path.join(self.pwd.pw_dir, "devstack_passwd")
+        passwd = rand_string(32)
+        if os.path.isfile(devstack_passwd) is False:
+            with open(devstack_passwd, "wb") as fd:
+                fd.write(passwd)
+            return passwd
+        fd = open(devstack_passwd).read().strip()
+        return fd
 
     def _devstack_location(self):
         basename = os.path.basename(DEVSTACK_REPOSITORY)
@@ -223,9 +247,45 @@ class Devstack(object):
                 raise ValueError("Option %s must be set in config" % k)
         return context
 
+    def _set_pip_mirror(self):
+        pypi_mirror = self.config.get("pypi-mirror")
+        if pypi_mirror is None:
+            return
+        # generate config
+        config = ConfigParser.RawConfigParser()
+        config.add_section('global')
+        config.set('global', 'index-url', pypi_mirror)
+        # create pip folder
+        home = self.pwd.pw_dir
+        pip_dir = os.path.join(home, ".pip")
+        if os.path.isdir(pip_dir) is False:
+            os.makedirs(pip_dir, 0o755)
+            os.chown(pip_dir, self.pwd.pw_uid, self.pwd.pw_gid)
+        pip_conf = os.path.join(pip_dir, "pip.conf")
+        # write pip config
+        with open(pip_conf, "wb") as fd:
+            config.write(fd)
+        return True
+
+    def _run_stack_sh(self):
+        devstack = self._devstack_location()
+        stack = os.path.join(devstack, "stack.sh")
+        args = [
+            stack,
+        ]
+        run_command(args, username=self.username)
+
+    def _write_keystonerc(self):
+        location = os.path.join(self.pwd.pw_dir, "keystonerc")
+        tpl = KEYSTONERC % self.password
+        with open(location, "wb") as fd:
+            fd.write(tpl)
+
     def run(self):
+        self._set_pip_mirror()
         context = self._get_context()
         self._clone_devstack()
         self._render_localconf(context)
         self.project.run()
-        # TODO: run devstack
+        self._run_stack_sh()
+        self._write_keystonerc()
