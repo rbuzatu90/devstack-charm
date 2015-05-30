@@ -4,6 +4,8 @@ import os
 import urlparse
 import string
 import ConfigParser
+import urllib2
+import shutil
 
 from os import urandom
 from itertools import islice, imap, repeat
@@ -34,6 +36,7 @@ class ExecException(Exception):
 
 def get_packages(name):
     pkg = hookenv.config(name)
+    arr = []
     if pkg:
         arr = pkg.split()
     return arr
@@ -85,17 +88,21 @@ def run_command(args, cwd=None, username=DEFAULT_USER, extra_env=None):
     env["PWD"] = cwd
     env["USER"] = username
 
-    for k, v in extra_env.iteritems():
-        env[k] = v
+    if extra_env:
+        for k, v in extra_env.iteritems():
+            env[k] = v
 
-    process = subprocess.Popen(
-        args, preexec_fn=demote(user_uid, user_gid), cwd=cwd, env=env
-    )
-    result = process.wait()
-    if result:
-        raise ExecException(
-            "Error running command: %s" % " ".join(args))
-    print result
+    child = os.fork()
+    if child == 0:
+        process = subprocess.Popen(
+            args, preexec_fn=demote(user_uid, user_gid), cwd=cwd, env=env
+        )
+        result = process.wait()
+        if result:
+            raise ExecException(
+                "Error running command: %s" % " ".join(args))
+        return
+    os.waitpid(child, 0)
 
 
 class Project(object):
@@ -104,11 +111,11 @@ class Project(object):
         self.username = username
         self.env = {}
         self.config = hookenv.config()
-        self.env["ZUUL_PROJECT"] = config.get('zuul-project')
-        self.env["ZUUL_URL"] = config.get('zuul-url')
-        self.env["ZUUL_REF"] = config.get('zuul-ref')
-        self.env["ZUUL_CHANGE"] = config.get('zuul-change')
-        self.env["BRANCH"] = config.get('zuul-branch')
+        self.env["ZUUL_PROJECT"] = self.config.get('zuul-project')
+        self.env["ZUUL_URL"] = self.config.get('zuul-url')
+        self.env["ZUUL_REF"] = self.config.get('zuul-ref')
+        self.env["ZUUL_CHANGE"] = self.config.get('zuul-change')
+        self.env["BRANCH"] = self.config.get('zuul-branch')
         self.charm_dir = os.environ.get("CHARM_DIR")
 
     @property
@@ -119,7 +126,7 @@ class Project(object):
 
     @property
     def project_location(self):
-        project_basename = os.path.basename(env["ZUUL_PROJECT"])
+        project_basename = os.path.basename(self.env["ZUUL_PROJECT"])
         location = os.path.join(STACK_LOCATION, project_basename)
         return location
 
@@ -128,14 +135,14 @@ class Project(object):
             if v is None:
                 raise ValueError("Missing required configuration: %s" % k)
 
-    def _create_project_root(self, owner=self.username):
+    def _create_project_root(self, owner=DEFAULT_USER):
         user = pwd.getpwnam(owner)
         if os.path.isdir(self.project_location) is False:
             os.makedirs(self.project_location, 0o755)
-        os.chown(self.project_location, user.uid, user.gid)
+        os.chown(self.project_location, user.pw_uid, user.pw_gid)
 
     def _run_gerrit_git_prep(
-            self, gerrit_site, git_origin=None, username=self.username):
+            self, gerrit_site, git_origin=None, username=DEFAULT_USER):
         gerrit_gitprep = os.path.join(
             self.charm_dir, "files", "gerrit-git-prep.sh")
         if os.path.isfile(gerrit_gitprep) is False:
@@ -157,7 +164,7 @@ class Project(object):
 
     def run(self):
         self._validate(self.env)
-        self._create_project_root()
+        self._create_project_root(self.username)
         self._run_gerrit_git_prep(self.gerrit_site)
 
 
@@ -194,14 +201,18 @@ class Devstack(object):
 
     def _clone_devstack(self):
         location = self._devstack_location()
+        if os.path.exists(location):
+            shutil.rmtree(location)
         args = ["git", "clone", DEVSTACK_REPOSITORY, location]
         run_command(args, username=self.username)
+        args = ["git", "checkout", self.config.get('zuul-branch'), ]
+        run_command(args, cwd=location, username=self.username)
 
     def _render_localconf(self, context):
         devstack = self._devstack_location()
         conf_dest = os.path.join(devstack, "local.conf")
         templating.render(
-            LOCALCONF_TEMPLATE, conf_dest, context,
+            "local.conf", conf_dest, context,
             owner=self.username, group=self.username)
         pass
 
@@ -227,10 +238,10 @@ class Devstack(object):
             "same_host_resize": None,
         }
 
-        for k, v in self.context.iteritems():
+        for k, v in context.iteritems():
             opt = k.replace("_", "-")
             val = self.config.get(opt)
-            if val:
+            if val is not None:
                 context[k] = val
 
         # add dynamic variables here
@@ -246,6 +257,15 @@ class Devstack(object):
             if v is None:
                 raise ValueError("Option %s must be set in config" % k)
         return context
+
+    def _install_pip(self):
+        get_pip = "/tmp/get-pip.py"
+        response = urllib2.urlopen("https://bootstrap.pypa.io/get-pip.py")
+        html = response.read()
+        with open(get_pip, "wb") as fd:
+            fd.write(html)
+        os.chmod(get_pip, 0o755)
+        run_command([get_pip, ], username="root")
 
     def _set_pip_mirror(self):
         pypi_mirror = self.config.get("pypi-mirror")
@@ -282,6 +302,7 @@ class Devstack(object):
             fd.write(tpl)
 
     def run(self):
+        self._install_pip()
         self._set_pip_mirror()
         context = self._get_context()
         self._clone_devstack()
