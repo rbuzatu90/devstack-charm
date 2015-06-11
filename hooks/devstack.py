@@ -85,24 +85,29 @@ def run_command(args, cwd=None, username=DEFAULT_USER, extra_env=None):
     env["HOME"] = user.pw_dir
     if cwd is None:
         cwd = user.pw_dir
-    env["PWD"] = cwd
-    env["USER"] = username
+    # env["PWD"] = cwd
+    # env["USER"] = username
 
     if extra_env:
         for k, v in extra_env.iteritems():
             env[k] = v
 
-    child = os.fork()
-    if child == 0:
-        process = subprocess.Popen(
-            args, preexec_fn=demote(user_uid, user_gid), cwd=cwd, env=env
-        )
-        result = process.wait()
-        if result:
-            raise ExecException(
-                "Error running command: %s" % " ".join(args))
-        return
-    os.waitpid(child, 0)
+    cmd = [
+        "sudo", "-u", username, "-E", "--",
+    ]
+    cmd.extend(args)
+    hookenv.log("running command: %r" % cmd)
+    # child = os.fork()
+    # if child == 0:
+    process = subprocess.Popen(
+        cmd, cwd=cwd, env=env
+    )
+    result = process.wait()
+    if result:
+        raise ExecException(
+            "Error running command: %s" % " ".join(args))
+        # return
+    # os.waitpid(child, 0)
 
 
 class Project(object):
@@ -216,6 +221,22 @@ class Devstack(object):
             owner=self.username, group=self.username)
         pass
 
+    def _get_enable_plugin(self):
+        plugins = []
+        enable_plugins = self.config.get("enable-plugin")
+        if not enable_plugins:
+            return plugins
+        lst = enable_plugins.split()
+        for i in lst:
+            plugin = i.split("|")
+            if len(plugin) < 2 and len(plugin) > 3:
+                raise Exception(
+                    "Invalid plugin definition: must be name|url|gitref")
+            if len(plugin) == 2:
+                plugin.append("master")
+            plugins.append(" ".join(plugin))
+        return plugins
+
     def _get_context(self):
         context = {
             "devstack_ip": None,
@@ -251,6 +272,7 @@ class Devstack(object):
             context["ip_version"] = 4
         if self.config.get("locarc-extra-blob"):
             context["locarc_extra_blob"] = self.config.get("locarc-extra-blob")
+        context["enable_plugin"] = self._get_enable_plugin()
 
         # validate context
         for k, v in context.iteritems():
@@ -289,7 +311,12 @@ class Devstack(object):
 
     def _run_stack_sh(self):
         devstack = self._devstack_location()
+        unstack = os.path.join(devstack, "unstack.sh")
         stack = os.path.join(devstack, "stack.sh")
+        args = [
+            unstack,
+        ]
+        run_command(args, username=self.username)
         args = [
             stack,
         ]
