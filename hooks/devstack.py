@@ -229,7 +229,7 @@ class Devstack(object):
         lst = enable_plugins.split()
         for i in lst:
             plugin = i.split("|")
-            if len(plugin) < 2 and len(plugin) > 3:
+            if len(plugin) < 2 or len(plugin) > 3:
                 raise Exception(
                     "Invalid plugin definition: must be name|url|gitref")
             if len(plugin) == 2:

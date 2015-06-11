@@ -106,3 +106,7 @@ options:
   extra-packages:
     type: string
     description: "extra system packages to install"
+  ntp-server:
+    type: string
+    description: "Ntp server to use"
+    default: time.windows.com
