@@ -100,3 +100,9 @@ options:
     description: |
       Space delimited list of plugins to enable. format is as follows:
         plugin-name|URL|GITREF
+  extra-python-packages:
+    type: string
+    description: "extra python packages to install"
+  extra-packages:
+    type: string
+    description: "extra system packages to install"

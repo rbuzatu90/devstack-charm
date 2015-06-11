@@ -316,7 +316,10 @@ class Devstack(object):
         args = [
             unstack,
         ]
-        run_command(args, username=self.username)
+        try:
+            run_command(args, username=self.username)
+        except Exception as err:
+            hookenv.log("Error running unstack: %s" % err)
         args = [
             stack,
         ]
