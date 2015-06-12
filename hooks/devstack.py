@@ -16,7 +16,7 @@ from charmhelpers.core import hookenv, host, templating
 from subprocess import PIPE
 
 
-DEVSTACK_REPOSITORY = "https://git.openstack.org/openstack-dev/devstack"
+DEVSTACK_REPOSITORY = "https://github.com/openstack-dev/devstack"
 UTC_TIMEZONE = "/usr/share/zoneinfo/UTC"
 LOCALTIME = "/etc/localtime"
 SUDOERSD = "/etc/sudoers.d"
