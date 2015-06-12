@@ -93,7 +93,7 @@ options:
     description: "Heat test image URL"
   enabled-services:
     type: string
-    default: "rabbitmysql key n-api n-crt n-obj n-cond n-sch n-cauth neutron q-svc q-agt q-dhcp q-l3 q-meta q-lbaas q-fwaas q-metering q-vpn g-api g-reg cinder c-api c-vol c-sch c-bak s-proxy s-object s-container s-account heat h-api h-api-cfn h-api-cw h-eng ceilometer-acentral ceilometer-collector ceilometer-api ceilometer-anotification tempest"
+    default: "rabbit mysql key n-api n-crt n-obj n-cond n-sch n-cauth neutron q-svc q-agt q-dhcp q-l3 q-meta q-lbaas q-fwaas q-metering q-vpn g-api g-reg cinder c-api c-vol c-sch c-bak s-proxy s-object s-container s-account heat h-api h-api-cfn h-api-cw h-eng ceilometer-acentral ceilometer-collector ceilometer-api ceilometer-anotification tempest"
     description: "List of services to enable"
   enable-plugin:
     type: string
