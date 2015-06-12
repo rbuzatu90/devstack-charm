@@ -8,10 +8,10 @@ def main():
     d = devstack.Devstack(username=devstack.DEFAULT_USER)
     settings = {
         'devstack_ip': hookenv.unit_private_ip(),
-        'password': d.password(),
-        'rabbit_user': d.rabbit_user(),
+        'password': d.password,
+        'rabbit_user': d.rabbit_user,
     }
-    relation_set(relation_id=None, **settings)
+    hookenv.relation_set(relation_id=None, **settings)
 
 if __name__ == "__main__":
     main()
