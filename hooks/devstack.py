@@ -6,6 +6,7 @@ import string
 import ConfigParser
 import urllib2
 import shutil
+import netifaces
 
 from os import urandom
 from itertools import islice, imap, repeat
@@ -16,6 +17,8 @@ from charmhelpers.core import hookenv, host, templating
 from subprocess import PIPE
 
 
+EXT_BR="br-ex"
+INT_BR="br-int"
 DEVSTACK_REPOSITORY = "https://github.com/openstack-dev/devstack"
 UTC_TIMEZONE = "/usr/share/zoneinfo/UTC"
 LOCALTIME = "/etc/localtime"
@@ -180,6 +183,7 @@ class Devstack(object):
         self.pwd = pwd.getpwnam(self.username)
         self.project = Project(username=self.username)
         self.config = hookenv.config()
+        self.context = self._get_context()
 
     @property
     def rabbit_user(self):
@@ -237,6 +241,35 @@ class Devstack(object):
             plugins.append(" ".join(plugin))
         return plugins
 
+    def _interfaces(self):
+        ret = {}
+        interfaces = netifaces.interfaces()
+        for i in interfaces:
+            details = netifaces.ifaddresses(i).get(netifaces.AF_LINK)
+            if details:
+                addr = details[0]["addr"]
+                ret[addr.upper()] = i
+        return ret
+
+    def _get_ext_port(self):
+        ext_ports = self.config.get("ext-port", "eth2")
+        return self._get_port(ext_ports)
+
+    def _get_data_port(self):
+        data_ports = self.config.get("data-port", "eth1")
+        return self._get_port(data_ports)
+
+    def _get_port(self, ports):
+        port_list = ports.split(" ")
+        iface_by_mac = self._interfaces()
+        interfaces = netifaces.interfaces()
+        for i in port_list:
+            if i in interfaces:
+                return i
+            if i.upper() in iface_by_mac:
+                return iface_by_mac[i.upper()]
+        raise Exception("Could not find port. Looked for: %s" % ports)
+
     def _get_context(self):
         context = {
             "devstack_ip": None,
@@ -246,8 +279,6 @@ class Devstack(object):
             "enable_vlans": None,
             "enable_tunneling": None,
             "vlan_range": None,
-            "public_interface": None,
-            "guest_interface": None,
             "ceilometer_backend": None,
             "enable_live_migration": None,
             "password": None,
@@ -273,12 +304,18 @@ class Devstack(object):
         if self.config.get("locarc-extra-blob"):
             context["locarc_extra_blob"] = self.config.get("locarc-extra-blob")
         context["enable_plugin"] = self._get_enable_plugin()
+        context["ext_iface"] = self._get_ext_port()
+        context["data_iface"] = self._get_data_port()
+
+        run_command(["ifconfig", context["ext_iface"], "promisc", "up"], username="root")
+        run_command(["ifconfig", context["data_iface"], "promisc", "up"], username="root")
 
         # validate context
         for k, v in context.iteritems():
             if v is None:
                 raise ValueError("Option %s must be set in config" % k)
-        return context
+        self.context = context
+        return self.context
 
     def _install_pip(self):
         get_pip = "/tmp/get-pip.py"
@@ -325,6 +362,18 @@ class Devstack(object):
         ]
         run_command(args, username=self.username)
 
+    def _assign_interfaces(self):
+        assign_ext_port = [
+            "ovs-vsctl", "--", "--may-exist", "add-port", EXT_BR, self.context["ext_iface"],
+        ]
+        run_command(assign_ext_port, username="root")
+
+        assign_data_port = [
+            "ovs-vsctl", "--", "--may-exist", "add-port", INT_BR, self.context["data_iface"],
+        ]
+        run_command(assign_data_port, username="root")
+        return None
+
     def _write_keystonerc(self):
         location = os.path.join(self.pwd.pw_dir, "keystonerc")
         tpl = KEYSTONERC % self.password
@@ -334,9 +383,9 @@ class Devstack(object):
     def run(self):
         self._install_pip()
         self._set_pip_mirror()
-        context = self._get_context()
         self._clone_devstack()
-        self._render_localconf(context)
+        self._render_localconf(self.context)
         self.project.run()
         self._run_stack_sh()
+        self._assign_interfaces()
         self._write_keystonerc()

@@ -24,14 +24,12 @@ options:
   pypi-mirror:
     type: string
     description: "PyPi mirror to use"
-  public-interface:
+  external-port:
     type: string
-    default: "eth2"
-    description: "External interface"
-  guest-interface:
+    description: "list of space delimited MAC addresses to use as external ports"
+  data-port:
     type: string
-    default: "eth1"
-    description: "Data port. This is the interface that is used for guest L2 traffic"
+    description: "list of space delimited MAC addresses to use as data ports"
   disable-ipv6:
     type: boolean
     default: True

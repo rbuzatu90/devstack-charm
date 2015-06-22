@@ -24,5 +24,5 @@ def install_charmhelpers():
     except ImportError:
         import subprocess
         subprocess.check_call(
-            ['apt-get', 'install', '-y', 'python-pip', 'git'])
+            ['apt-get', 'install', '-y', 'python-pip', 'git', 'python-netifaces'])
         subprocess.check_call(['pip', 'install', 'charmhelpers'])
