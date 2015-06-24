@@ -307,6 +307,9 @@ class Devstack(object):
         context["ext_iface"] = self._get_ext_port()
         context["data_iface"] = self._get_data_port()
 
+        if self.config.get("disabled-services"):
+            context["disabled_services"] = self.config.get("disabled-services")
+
         run_command(["ifconfig", context["ext_iface"], "promisc", "up"], username="root")
         run_command(["ifconfig", context["data_iface"], "promisc", "up"], username="root")
 
@@ -363,13 +366,14 @@ class Devstack(object):
         run_command(args, username=self.username)
 
     def _assign_interfaces(self):
+        PHY_BR = "br-%s" % self.context["data_iface"]
         assign_ext_port = [
             "ovs-vsctl", "--", "--may-exist", "add-port", EXT_BR, self.context["ext_iface"],
         ]
         run_command(assign_ext_port, username="root")
 
         assign_data_port = [
-            "ovs-vsctl", "--", "--may-exist", "add-port", INT_BR, self.context["data_iface"],
+            "ovs-vsctl", "--", "--may-exist", "add-port", PHY_BR, self.context["data_iface"],
         ]
         run_command(assign_data_port, username="root")
         return None
