@@ -398,6 +398,10 @@ class Devstack(object):
         with open(location, "wb") as fd:
             fd.write(tpl)
 
+    def _set_active(self):
+        args = ["status-set", "active"]
+        subprocess.check_call(args)
+
     def run(self):
         self._install_pip()
         self._set_pip_mirror()
@@ -407,3 +411,4 @@ class Devstack(object):
         self._run_stack_sh()
         self._assign_interfaces()
         self._write_keystonerc()
+        self._set_active()
