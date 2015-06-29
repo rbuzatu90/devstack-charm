@@ -58,26 +58,47 @@ def download_file(url, destination):
             fd.write(chunk)
         
 
-def render_ad_credentials(username=DEFAULT_USER):                                           
-        p = pwd.getpwnam(username)
-        creds = ad_credentials()                                                
-        location = os.path.join(p.pw_dir, "ad_credentials")              
-        if creds:                                                               
+
+class DevstackContext(object):
+
+    RELATION = "devstack"
+
+    def __init__(self, username=DEFAULT_USER):
+        self.relation_data = {}
+        self.user = pwd.getpwnam(username)
+
+    def _fetch_relation_data(self):
+        for rid in relation_ids(self.RELATION):                                        
+            for unit in related_units(rid):                                         
+                self.relation_data[unit] = relation_get(rid=rid, unit=unit)
+
+    def render_ad_credentials(self):
+        self._fetch_relation_data()
+        location = os.path.join(self.user.pw_dir, "ad_credentials")
+        for i in self.relation_data.keys():
+            creds = self.relation_data.keys[i].get("ad_credentials")
+            if not creds:
+                continue
             with open(location, "wb") as fd:                                    
                 for i in creds.keys():                                          
-                    fd.write("%s=%s\n" % (i.upper(), creds[i])) 
-        os.chown(location, p.pw_uid, p.pw_gid)
+                    fd.write("%s=%s\n" % (i.upper(), creds[i]))
+        os.chown(location, self.user.pw_uid, self.user.pw_gid)                  
         os.chmod(location, 0o700)
 
-
-def ad_credentials():
-    for rid in relation_ids('cloud-compute'):                                   
-        for unit in related_units(rid):                                         
-            creds = relation_get('ad_credentials', 
-                                 rid=rid, unit=unit),                               
-            if creds:
-                plain = base64.b64decode(creds)
-                return json.loads(plain.decode("utf-16"))
+    def render_nodes(self):
+        units = {}
+        location = os.path.join(self.user.pw_dir, "nodes")
+        for i in self.relation_data.keys():
+            name = "_".join(d.split("-")[:-1]).upper()
+            if units.get(name):
+                units[name] += ",%s" % self.relation_data[i]["private-address"]
+            else:
+                units[name] = self.relation_data[i]["private-address"]
+        with open(location, "w") as fd:
+            for i in units.keys():
+                fd.write("%s=%s\n" % (i, units[i]))
+        os.chown(location, self.user.pw_uid, self.user.pw_gid)                                  
+        os.chmod(location, 0o700)
 
 
 class ExecException(Exception):

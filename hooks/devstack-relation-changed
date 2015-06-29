@@ -17,5 +17,7 @@
 
 import devstack
 
-
-devstack.render_ad_credentials(username=devstack.DEFAULT_USER)
+if __name__ == '__main__':
+    ctx = devstack.DevstackContext(username=devstack.DEFAULT_USER)
+    ctx.render_ad_credentials()
+    ctx.render_nodes()
