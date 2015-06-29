@@ -111,3 +111,11 @@ options:
     type: string
     description: "Ntp server to use"
     default: time.windows.com
+  heartbeat-threshold:
+    type: int
+    description: "rabbitmq heartbeat threshold"
+    default: 90
+  heartbeat-timeout:
+    type: int
+    description: "rabbitmq heartbeat timeout"
+    default: 30
