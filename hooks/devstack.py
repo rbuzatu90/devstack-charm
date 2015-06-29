@@ -487,7 +487,7 @@ class Devstack(object):
             destination = os.path.join(dst_folder, name)
             if os.path.isfile(destination):
                 continue
-            download_file(url, destination)
+            download_file(i, destination)
         subprocess.check_call(
             [
                 "chown", "%s:%s" % (self.username, self.username),
