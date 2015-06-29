@@ -47,6 +47,39 @@ export OS_AUTH_URL=http://127.0.0.1:35357/v2.0/
 """
 
 
+def download_file(url, destination):
+    hookenv.log("Downloading from %s to %s" % (url, destination))
+    resource = urllib2.urlopen(url)
+    with open(destination, "wb") as fd:
+        while True:
+            chunk = resource.read(8192)
+            if not chunk:
+                break
+            fd.write(chunk)
+        
+
+def render_ad_credentials(username=DEFAULT_USER):                                           
+        p = pwd.getpwnam(username)
+        creds = ad_credentials()                                                
+        location = os.path.join(p.pw_dir, "ad_credentials")              
+        if creds:                                                               
+            with open(location, "wb") as fd:                                    
+                for i in creds.keys():                                          
+                    fd.write("%s=%s" % (i.upper(), creds[i])) 
+        os.chown(location, p.pw_uid, p.pw_gid)
+        os.chmod(location, 0o700)
+
+
+def ad_credentials():
+    for rid in relation_ids('cloud-compute'):                                   
+        for unit in related_units(rid):                                         
+            creds = relation_get('ad_credentials', 
+                                 rid=rid, unit=unit),                               
+            if creds:
+                plain = base64.b64decode(creds)
+                return json.loads(plain.decode("utf-16"))
+
+
 class ExecException(Exception):
     pass
 
@@ -237,7 +270,15 @@ class Devstack(object):
         templating.render(
             "local.conf", conf_dest, context,
             owner=self.username, group=self.username)
-        pass
+
+    def _render_local_sh(self, context):
+        devstack = self._devstack_location()                                    
+        context["devstack_location"] = devstack
+        conf_dest = os.path.join(devstack, "local.sh")                        
+        templating.render(                                                      
+            "local.sh", conf_dest, context,                                   
+            owner=self.username, group=self.username)
+        os.chmod(conf_dest, 0o755)
 
     def _get_enable_plugin(self):
         plugins = []
@@ -402,13 +443,45 @@ class Devstack(object):
         args = ["status-set", "active"]
         subprocess.check_call(args)
 
+    def _download_images(self):
+        # download_file
+        test_images_list = heat_images = []
+        test_images = self.config.get("test-image-url")
+        heat_images = self.config.get("heat-image-url")
+        if test_images:
+            test_images_list = test_images.split(",")
+        if heat_images:
+            heat_images_list = heat_images.split(",")
+        test_images_list.extend(heat_images)
+
+        dst_folder = os.path.join(self._devstack_location(), "files", "images")
+        if os.path.isdir(dst_folder) is False:                                        
+            os.path.makedirs(img, 0o755)
+
+        for i in test_images_list:
+            if i.startswith("http") is False:
+                continue
+            url = urlparse.urlparse(i)
+            name = os.path.basename(url.path)
+            destination = os.path.join(dst_folder, name)
+            if os.path.isfile(destination):
+                continue
+            download_file(url, destination)
+        subprocess.check_call(
+            [
+                "chown", "%s:%s" % (self.username, self.username),
+                "-R", dst_folder
+            ])
+        
     def run(self):
         self._install_pip()
         self._set_pip_mirror()
         self._clone_devstack()
         self._render_localconf(self.context)
+        self._render_local_sh(self.context)
         self.project.run()
         self._run_stack_sh()
         self._assign_interfaces()
         self._write_keystonerc()
+        self._download_images()
         self._set_active()
