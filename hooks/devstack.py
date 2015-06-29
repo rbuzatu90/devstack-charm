@@ -21,6 +21,8 @@ import ConfigParser
 import urllib2
 import shutil
 import netifaces
+import json
+import base64
 
 from os import urandom
 from itertools import islice, imap, repeat
@@ -68,20 +70,21 @@ class DevstackContext(object):
         self.user = pwd.getpwnam(username)
 
     def _fetch_relation_data(self):
-        for rid in relation_ids(self.RELATION):                                        
-            for unit in related_units(rid):                                         
-                self.relation_data[unit] = relation_get(rid=rid, unit=unit)
+        for rid in hookenv.relation_ids(self.RELATION):                                        
+            for unit in hookenv.related_units(rid):                                         
+                self.relation_data[unit] = hookenv.relation_get(rid=rid, unit=unit)
 
     def render_ad_credentials(self):
         self._fetch_relation_data()
         location = os.path.join(self.user.pw_dir, "ad_credentials")
         for i in self.relation_data.keys():
-            creds = self.relation_data.keys[i].get("ad_credentials")
+            creds = self.relation_data[i].get("ad_credentials")
             if not creds:
                 continue
+            credential_data = json.loads(base64.b64decode(creds).decode("utf-16"))
             with open(location, "wb") as fd:                                    
-                for i in creds.keys():                                          
-                    fd.write("%s=%s\n" % (i.upper(), creds[i]))
+                for i in credential_data.keys():                                          
+                    fd.write("%s=%s\n" % (i.upper(), credential_data[i]))
         os.chown(location, self.user.pw_uid, self.user.pw_gid)                  
         os.chmod(location, 0o700)
 
@@ -89,7 +92,7 @@ class DevstackContext(object):
         units = {}
         location = os.path.join(self.user.pw_dir, "nodes")
         for i in self.relation_data.keys():
-            name = "_".join(d.split("-")[:-1]).upper()
+            name = "_".join(i.split("-")[:-1]).upper()
             if units.get(name):
                 units[name] += ",%s" % self.relation_data[i]["private-address"]
             else:
@@ -354,6 +357,8 @@ class Devstack(object):
             "tenant_network_type": None,
             "enable_vlans": None,
             "enable_tunneling": None,
+            "heartbeat_threshold": None,
+            "heartbeat_timeout": None,
             "vlan_range": None,
             "ceilometer_backend": None,
             "enable_live_migration": None,
