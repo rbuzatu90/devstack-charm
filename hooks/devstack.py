@@ -65,7 +65,7 @@ def render_ad_credentials(username=DEFAULT_USER):
         if creds:                                                               
             with open(location, "wb") as fd:                                    
                 for i in creds.keys():                                          
-                    fd.write("%s=%s" % (i.upper(), creds[i])) 
+                    fd.write("%s=%s\n" % (i.upper(), creds[i])) 
         os.chown(location, p.pw_uid, p.pw_gid)
         os.chmod(location, 0o700)
 
