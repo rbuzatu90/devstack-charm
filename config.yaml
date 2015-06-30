@@ -115,7 +115,7 @@ options:
     type: int
     description: "rabbitmq heartbeat threshold"
     default: 90
-  heartbeat-timeout:
+  heartbeat-rate:
     type: int
     description: "rabbitmq heartbeat timeout"
     default: 30

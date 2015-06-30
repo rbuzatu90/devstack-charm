@@ -85,8 +85,9 @@ class DevstackContext(object):
             with open(location, "wb") as fd:                                    
                 for i in credential_data.keys():                                          
                     fd.write("%s=%s\n" % (i.upper(), credential_data[i]))
-        os.chown(location, self.user.pw_uid, self.user.pw_gid)                  
-        os.chmod(location, 0o700)
+        if os.path.isfile(location):
+            os.chown(location, self.user.pw_uid, self.user.pw_gid)                  
+            os.chmod(location, 0o700)
 
     def render_nodes(self):
         units = {}
@@ -100,8 +101,9 @@ class DevstackContext(object):
         with open(location, "w") as fd:
             for i in units.keys():
                 fd.write("%s=%s\n" % (i, units[i]))
-        os.chown(location, self.user.pw_uid, self.user.pw_gid)                                  
-        os.chmod(location, 0o700)
+        if os.path.isfile(location):
+            os.chown(location, self.user.pw_uid, self.user.pw_gid)                                  
+            os.chmod(location, 0o700)
 
 
 class ExecException(Exception):
@@ -358,7 +360,7 @@ class Devstack(object):
             "enable_vlans": None,
             "enable_tunneling": None,
             "heartbeat_threshold": None,
-            "heartbeat_timeout": None,
+            "heartbeat_rate": None,
             "vlan_range": None,
             "ceilometer_backend": None,
             "enable_live_migration": None,
