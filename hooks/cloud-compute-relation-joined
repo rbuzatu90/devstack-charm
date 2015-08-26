@@ -23,7 +23,7 @@ def main():
     d = devstack.Devstack(username=devstack.DEFAULT_USER)
     ip = hookenv.unit_private_ip()
     settings = {
-        'neutron_url': "http://%s:9696",
+        'neutron_url': "http://%s:9696" % ip,
         'auth_host': ip,
         'auth_port': "35357",
         'auth_protocol': 'http',
