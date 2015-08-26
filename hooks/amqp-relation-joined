@@ -23,6 +23,8 @@ def main():
     d = devstack.Devstack(username=devstack.DEFAULT_USER)
     settings = {
         'password': d.password,
+        'username': d.rabbit_user,
+        'vhost': '/',
     }
     hookenv.relation_set(relation_id=None, **settings)
 
