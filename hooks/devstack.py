@@ -55,10 +55,17 @@ def interfaces():
     ret = {}
     interfaces = netifaces.interfaces()
     for i in interfaces:
-        details = netifaces.ifaddresses(i).get(netifaces.AF_LINK)
+        link = os.path.join("/sys/class/net", i)
+        master = os.path.join(link, "master")
+        iface = i
+        if os.path.islink(master):
+            # if this interface is part of a bridge, return the bridge to which
+            # it belongs
+            iface = os.path.basename(os.path.abspath(os.readlink(master)))
+        details = netifaces.ifaddresses(iface).get(netifaces.AF_LINK)
         if details:
             addr = details[0]["addr"]
-            ret[addr.upper()] = i
+            ret[addr.upper()] = iface
     return ret
 
 
