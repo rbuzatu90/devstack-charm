@@ -9,3 +9,12 @@ subordinate: false
 provides:
   devstack:
     interface: devstack
+  amqp:
+    interface: rabbitmq
+  image-service:
+    interface: glance
+  nova-ceilometer:
+    interface: nova-ceilometer
+requires:
+  cloud-compute:
+    interface: nova-compute

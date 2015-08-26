@@ -15,7 +15,7 @@ nova flavor-create m1.heat 451 512 5 1
 
 # Add DNS config to the private network
 subnet_id=`neutron net-show private | grep subnets | awk '{print $4}'`
-neutron subnet-update $subnet_id --dns_nameservers list=true 8.8.8.8 8.8.4.4
+neutron subnet-update $subnet_id --dns_nameservers list=true {{nameservers}}
 
 TEMPEST_CONFIG=/opt/stack/tempest/etc/tempest.conf
 

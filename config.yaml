@@ -1,4 +1,8 @@
 options:
+  nameservers:
+    type: string
+    description: "space separated list of nameservers"
+    default: "8.8.8.8 8.8.4.4"
   zuul-url:
     type: string
     description: "The zuul URL from which we fetch the git repositories"
@@ -119,3 +123,14 @@ options:
     type: int
     description: "rabbitmq heartbeat timeout"
     default: 30
+  prep-project:
+    type: bool
+    default: true
+    description: |
+        Set this to false if you do not wish devstack to do a gerrit-git-prep
+        on the project defined in zuul-project. Note zuul-branch should still
+        be set.
+  tenant-name:
+    type: string
+    default: "service"
+    description: "Service tenant name"

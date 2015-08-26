@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Copyright 2015 Cloudbase Solutions SRL
 #
@@ -14,29 +14,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import setup
-setup.pre_install()
-
-import devstack
 
 from charmhelpers.core import hookenv
+import devstack
 
 
-def install():
-    hookenv.log('Installing devstack')
-    config = hookenv.config()
-    use_bonding = config.get("use-bonding", False)
-    if use_bonding:
-        b = devstack.Bonding()
-        b.run()
-    # add steps for installing dependencies and packages here
-    # e.g.: from charmhelpers import fetch
-    #       fetch.apt_install(fetch.filter_installed_packages(['nginx']))
-    devstack.install_extra_packages()
-    devstack.sync_time()
+def main():
     d = devstack.Devstack(username=devstack.DEFAULT_USER)
-    d.run()
-
+    settings = {
+        'rabbit_host': hookenv.unit_private_ip(),
+        'rabbit_password': d.password,
+        'rabbit_userid': d.rabbit_user,
+        'rabbit_virtual_host': "/",
+    }
+    hookenv.relation_set(relation_id=None, **settings)
 
 if __name__ == "__main__":
-    install()
+    main()
+

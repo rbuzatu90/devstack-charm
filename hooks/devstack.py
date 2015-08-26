@@ -41,12 +41,46 @@ LOCALTIME = "/etc/localtime"
 SUDOERSD = "/etc/sudoers.d"
 STACK_LOCATION = "/opt/stack"
 DEFAULT_USER = "ubuntu"
+BONDING_MASTERS = "/sys/class/net/bonding_masters"
+
 KEYSTONERC = """
 export OS_USERNAME=admin
 export OS_TENANT_NAME=admin
 export OS_PASSWORD=%s
 export OS_AUTH_URL=http://127.0.0.1:35357/v2.0/
 """
+
+
+def interfaces():
+    ret = {}
+    interfaces = netifaces.interfaces()
+    for i in interfaces:
+        details = netifaces.ifaddresses(i).get(netifaces.AF_LINK)
+        if details:
+            addr = details[0]["addr"]
+            ret[addr.upper()] = i
+    return ret
+
+
+def get_port(ports):
+    port_list = ports.split(" ")
+    iface_by_mac = interfaces()
+    interfaces = netifaces.interfaces()
+    for i in port_list:
+        if i in interfaces:
+            return i
+        if i.upper() in iface_by_mac:
+            return iface_by_mac[i.upper()]
+    raise Exception("Could not find port. Looked for: %s" % ports)
+
+def find_bond_interfaces(self):
+    ifaces = interfaces()
+    found = []
+    for i in ports:
+        port = ifaces.get(i.upper())
+        if port:
+            found.append(port)
+    return found
 
 
 def download_file(url, destination):
@@ -249,6 +283,64 @@ class Project(object):
         self._run_gerrit_git_prep(self.gerrit_site)
 
 
+class Bonding(object):
+
+    def __init__(self):
+        """
+        ports: a list of mac addresses that are meant to be part of a bond
+        """
+        self.config = hookenv.config()
+        self.bonding_mode = self.config.get("bonding-mode", 4)
+        self.bond_name = self.config.get("bond-name", "bond0")
+        self.bond_sysfs = os.path.join("/sys/class/net", self.bond_name)
+        self.bond_settings = os.path.join(self.bond_sysfs, "bonding")
+
+    def _create_bond_interface(self):
+        subprocess.check_call(["modprobe", "bonding"])
+        if os.path.isdir(self.bond_sysfs):
+            if os.path.isdir(self.bond_settings) is False:
+                raise Exception("%s already on system and is not a bond." % self.bond_name)
+        else:
+            with open(BONDING_MASTERS, "w") as b:
+                b.write("+%s\n" % self.bond_name)
+        # bond mode can only be set when link is down
+        subprocess.check_call(["ip", "link", "set", self.bond_name, "down"])
+        # remove slaves
+        slaves = os.path.join(self.bond_settings, "slaves")
+        with open(slaves, "w+") as s:
+            p = s.read().split()
+            for i in p:
+                s.write("-%s" % i)
+        # set mode
+        mode = os.path.join(self.bond_settings, "mode")
+        with open(mode, "w+") as m:
+            m.write("%s\n" % self.bonding_mode)
+        # bring the interface up
+        subprocess.check_call(["ip", "link", "set", self.bond_name, "up"])
+
+    def _assign_ports_to_bond(self):
+        ports = find_bond_interfaces()
+        if len(ports) == 0:
+            raise Exception("No valid bond ports were found on this node.")
+        slaves = os.path.join(self.bond_settings, "slaves")
+        with open(slaves, "w+") as s:
+            p = s.read().split()
+            # Check which ports we need to still add to bond
+            for i in ports:
+                if i not in p:
+                    s.write("+%s" % i)
+            # remove foreign ports from bond. If you manually configure this bond
+            # before running this charm, its your problem :).
+            for i in p:
+                if i not in ports:
+                    s.write("-%s" % i)
+
+    def run(self):
+        self._create_bond_interface()
+        self._assign_ports_to_bond()
+        
+
+
 class Devstack(object):
 
     def __init__(self, username=DEFAULT_USER):
@@ -257,6 +349,7 @@ class Devstack(object):
         self.project = Project(username=self.username)
         self.config = hookenv.config()
         self.context = self._get_context()
+        self.prep_project = self.config.get('prep-project')
 
     @property
     def rabbit_user(self):
@@ -322,16 +415,6 @@ class Devstack(object):
             plugins.append(" ".join(plugin))
         return plugins
 
-    def _interfaces(self):
-        ret = {}
-        interfaces = netifaces.interfaces()
-        for i in interfaces:
-            details = netifaces.ifaddresses(i).get(netifaces.AF_LINK)
-            if details:
-                addr = details[0]["addr"]
-                ret[addr.upper()] = i
-        return ret
-
     def _get_ext_port(self):
         ext_ports = self.config.get("ext-port", "eth2")
         return self._get_port(ext_ports)
@@ -341,8 +424,8 @@ class Devstack(object):
         return self._get_port(data_ports)
 
     def _get_port(self, ports):
-        port_list = ports.split(" ")
-        iface_by_mac = self._interfaces()
+        port_list = ports.split()
+        iface_by_mac = interfaces()
         interfaces = netifaces.interfaces()
         for i in port_list:
             if i in interfaces:
@@ -364,11 +447,13 @@ class Devstack(object):
             "vlan_range": None,
             "ceilometer_backend": None,
             "enable_live_migration": None,
+            "nameservers": None,
             "password": None,
             "verbose": None,
             "debug": None,
             "test_image_url": None,
             "heat_image_url": None,
+            "tenant_name": None,
             "zuul_branch": None,
             "same_host_resize": None,
         }
@@ -507,7 +592,8 @@ class Devstack(object):
         self._clone_devstack()
         self._render_localconf(self.context)
         self._render_local_sh(self.context)
-        self.project.run()
+        if self.prep_project:
+            self.project.run()
         self._run_stack_sh()
         self._assign_interfaces()
         self._write_keystonerc()
