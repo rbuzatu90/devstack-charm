@@ -27,7 +27,6 @@ def main():
         'auth_host': ip,
         'auth_port': "35357",
         'auth_protocol': 'http',
-        'neutron_auth_strategy': 'keystone',
         'service_tenant_name': d.config.get("tenant-name", "service"),
         'service_username': 'neutron',
         'service_password': d.password, 

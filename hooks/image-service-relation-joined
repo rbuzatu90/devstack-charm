@@ -22,7 +22,7 @@ import devstack
 def main():
     d = devstack.Devstack(username=devstack.DEFAULT_USER)
     settings = {
-        'glance_api_servers': "http://%s:9292" % hookenv.unit_private_ip(),
+        'glance-api-server': "http://%s:9292" % hookenv.unit_private_ip(),
     }
     hookenv.relation_set(relation_id=None, **settings)
 

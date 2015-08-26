@@ -22,10 +22,7 @@ import devstack
 def main():
     d = devstack.Devstack(username=devstack.DEFAULT_USER)
     settings = {
-        'rabbit_host': hookenv.unit_private_ip(),
-        'rabbit_password': d.password,
-        'rabbit_userid': d.rabbit_user,
-        'rabbit_virtual_host': "/",
+        'password': d.password,
     }
     hookenv.relation_set(relation_id=None, **settings)
 
