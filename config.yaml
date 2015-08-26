@@ -124,7 +124,7 @@ options:
     description: "rabbitmq heartbeat timeout"
     default: 30
   prep-project:
-    type: bool
+    type: boolean
     default: true
     description: |
         Set this to false if you do not wish devstack to do a gerrit-git-prep
@@ -135,7 +135,7 @@ options:
     default: "service"
     description: "Service tenant name"
   use-bonding:
-    type: bool
+    type: boolean
     default: false
     description: "enable bonding. If this is set"
   bond-ports:
