@@ -567,7 +567,7 @@ class Devstack(object):
             test_images_list = test_images.split(",")
         if heat_images:
             heat_images_list = heat_images.split(",")
-        test_images_list.extend(heat_images)
+        test_images_list.extend(heat_images_list)
 
         dst_folder = os.path.join(self._devstack_location(), "files", "images")
         if os.path.isdir(dst_folder) is False:                                        
