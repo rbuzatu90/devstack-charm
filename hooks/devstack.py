@@ -65,9 +65,9 @@ def interfaces():
 def get_port(ports):
     port_list = ports.split(" ")
     iface_by_mac = interfaces()
-    interfaces = netifaces.interfaces()
+    ifaces = netifaces.interfaces()
     for i in port_list:
-        if i in interfaces:
+        if i in ifaces:
             return i
         if i.upper() in iface_by_mac:
             return iface_by_mac[i.upper()]
@@ -311,6 +311,7 @@ class Bonding(object):
             p = s.read().split()
             for i in p:
                 s.write("-%s" % i)
+                s.flush()
         # set mode
         mode = os.path.join(self.bond_settings, "mode")
         with open(mode, "w+") as m:
