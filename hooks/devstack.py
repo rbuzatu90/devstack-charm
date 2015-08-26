@@ -319,7 +319,8 @@ class Bonding(object):
         subprocess.check_call(["ip", "link", "set", self.bond_name, "up"])
 
     def _assign_ports_to_bond(self):
-        ports = find_bond_interfaces(self.config.get("bond-ports", []))
+        bonds = self.config.get("bond-ports", "")
+        ports = find_bond_interfaces(bonds.split())
         if len(ports) == 0:
             raise Exception("No valid bond ports were found on this node.")
         slaves = os.path.join(self.bond_settings, "slaves")
@@ -329,11 +330,13 @@ class Bonding(object):
             for i in ports:
                 if i not in p:
                     s.write("+%s" % i)
+                    s.flush()
             # remove foreign ports from bond. If you manually configure this bond
             # before running this charm, its your problem :).
             for i in p:
                 if i not in ports:
                     s.write("-%s" % i)
+                    s.flush()
 
     def run(self):
         self._create_bond_interface()
