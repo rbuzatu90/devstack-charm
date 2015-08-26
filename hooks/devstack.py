@@ -73,7 +73,7 @@ def get_port(ports):
             return iface_by_mac[i.upper()]
     raise Exception("Could not find port. Looked for: %s" % ports)
 
-def find_bond_interfaces(self):
+def find_bond_interfaces(ports):
     ifaces = interfaces()
     found = []
     for i in ports:
@@ -319,7 +319,7 @@ class Bonding(object):
         subprocess.check_call(["ip", "link", "set", self.bond_name, "up"])
 
     def _assign_ports_to_bond(self):
-        ports = find_bond_interfaces()
+        ports = find_bond_interfaces(self.config.get("bond-ports", []))
         if len(ports) == 0:
             raise Exception("No valid bond ports were found on this node.")
         slaves = os.path.join(self.bond_settings, "slaves")
@@ -417,22 +417,11 @@ class Devstack(object):
 
     def _get_ext_port(self):
         ext_ports = self.config.get("ext-port", "eth2")
-        return self._get_port(ext_ports)
+        return get_port(ext_ports)
 
     def _get_data_port(self):
         data_ports = self.config.get("data-port", "eth1")
-        return self._get_port(data_ports)
-
-    def _get_port(self, ports):
-        port_list = ports.split()
-        iface_by_mac = interfaces()
-        interfaces = netifaces.interfaces()
-        for i in port_list:
-            if i in interfaces:
-                return i
-            if i.upper() in iface_by_mac:
-                return iface_by_mac[i.upper()]
-        raise Exception("Could not find port. Looked for: %s" % ports)
+        return get_port(data_ports)
 
     def _get_context(self):
         context = {

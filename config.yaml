@@ -134,3 +134,14 @@ options:
     type: string
     default: "service"
     description: "Service tenant name"
+  use-bonding:
+    type: bool
+    default: false
+    description: "enable bonding. If this is set"
+  bond-ports:
+    type: string
+    description: "list of space delimited MAC addresses to use as bond-ports"
+  bonding-mode:
+    type: int
+    default: 4
+    description: "Bongind mode. Default is LACP (4)"
