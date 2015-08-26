@@ -444,6 +444,7 @@ class Devstack(object):
             "heat_image_url": None,
             "tenant_name": None,
             "zuul_branch": None,
+            "scenario_img": None,
             "same_host_resize": None,
         }
 

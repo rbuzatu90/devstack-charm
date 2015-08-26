@@ -145,3 +145,10 @@ options:
     type: int
     default: 4
     description: "Bongind mode. Default is LACP (4)"
+  scenario-img:
+    type: string
+    default: "cirros.vhdx"
+    description: |
+      This option allows you to specify the image you want to use for scenarios.
+      The test-image-url allows you to download multiple images before stacking. This option
+      allows you to specify one of those files as the actual image. Use only the basename (eg: cirros.vhdx)

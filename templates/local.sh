@@ -24,11 +24,16 @@ iniset $TEMPEST_CONFIG compute-feature-enabled rdp_console true
 iniset $TEMPEST_CONFIG compute-feature-enabled block_migrate_cinder_iscsi False
 
 iniset $TEMPEST_CONFIG scenario img_dir "{{devstack_location}}/files/images/"
-iniset $TEMPEST_CONFIG scenario img_file "cirros.vhdx"
+iniset $TEMPEST_CONFIG scenario img_file {{scenario_img}}
 iniset $TEMPEST_CONFIG scenario img_disk_format vhd
 
 IMAGE_REF=`iniget $TEMPEST_CONFIG compute image_ref`
 iniset $TEMPEST_CONFIG compute image_ref_alt $IMAGE_REF
+
+iniset $TEMPEST_CONFIG compute ssh_user {{ssh_user}}
+iniset $TEMPEST_CONFIG compute image_alt_ssh_user {{ssh_user}}
+iniset $TEMPEST_CONFIG compute image_ssh_user {{ssh_user}}
+iniset $TEMPEST_CONFIG compute ssh_timeout 180
 
 iniset $TEMPEST_CONFIG compute build_timeout 300
 iniset $TEMPEST_CONFIG orchestration build_timeout 600
