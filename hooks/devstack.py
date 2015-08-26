@@ -432,6 +432,7 @@ class Devstack(object):
             "enable_vlans": None,
             "enable_tunneling": None,
             "heartbeat_threshold": None,
+            "ssh_user": None,
             "heartbeat_rate": None,
             "vlan_range": None,
             "ceilometer_backend": None,
