@@ -333,7 +333,7 @@ class Devstack(object):
         return ret
 
     def _get_ext_port(self):
-        ext_ports = self.config.get("ext-port", "eth2")
+        ext_ports = self.config.get("external-port", "eth2")
         return self._get_port(ext_ports)
 
     def _get_data_port(self):
