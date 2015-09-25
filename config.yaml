@@ -19,6 +19,12 @@ options:
   zuul-project:
     type: string
     description: "Project we are testing (openstack/nova, openstack/neutron, etc)"
+  extra-repos:
+    type: string
+    description: |
+      A space delimited list of repositories to clone. These repositories need to be
+      formated as follows: giturl|revision|location.
+      Example https://github.com/openstack/keystone|b6c70ce|/opt/stack/keystone
   vlan-range:
     type: string
     description: "vlan ranges to alocate"
