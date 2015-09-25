@@ -500,11 +500,29 @@ class Devstack(object):
                 "chown", "%s:%s" % (self.username, self.username),
                 "-R", dst_folder
             ])
-        
+    
+    def _clone_extra_repos(self):
+        repos = self.config.get("extra-repos")
+        if repos is None:
+            return
+        r = repos.split()
+        for i in r:
+            url, rev, dst = i.split("|")
+            hookenv.log("Cloning repository %s (%s) to %s" % (url, rev, dst))
+            parent = os.path.dirname(dst)
+            if os.path.isdir(parent) is False:
+                os.makedirs(parent, 0o755)
+                os.chown(parent, self.pwd.pw_uid, self.pwd.pw_gid)
+            args = ["git", "clone", url, dst]
+            run_command(args, username=self.username)
+            args = ["git", "checkout", rev]
+            run_command(args, username=self.username, cwd=dst)
+
     def run(self):
         self._install_pip()
         self._set_pip_mirror()
         self._clone_devstack()
+        self._clone_extra_repos()
         self._render_localconf(self.context)
         self._render_local_sh(self.context)
         self.project.run()
