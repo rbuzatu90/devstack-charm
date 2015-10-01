@@ -162,3 +162,12 @@ options:
     type: string
     default: "cirros"
     description: "ssh user used by tempest in scenarios"
+  libs-from-git:
+    type: string
+    description: |
+      Space delimited list of packages devstack should install from git. Format is as follows:
+
+        python-openstackclient|master
+
+      This will set python-openstackclient in LIBS_FROM_GIT and will set OPENSTACKCLIENT_BRANCH=master
+      If the branch is ommited, zuul-branch will be used

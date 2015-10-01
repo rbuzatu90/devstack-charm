@@ -473,6 +473,8 @@ class Devstack(object):
             context["ip_version"] = 4
         if self.config.get("locarc-extra-blob"):
             context["locarc_extra_blob"] = self.config.get("locarc-extra-blob")
+        if self.config.get("libs-from-git"):
+            context["libs_from_git"] = self._get_libs_from_pip()
         context["enable_plugin"] = self._get_enable_plugin()
         context["ext_iface"] = self._get_ext_port()
         context["data_iface"] = self._get_data_port()
@@ -489,6 +491,32 @@ class Devstack(object):
                 raise ValueError("Option %s must be set in config" % k)
         self.context = context
         return self.context
+
+    def _get_libs_from_pip(self):
+        libs = self.config.get("libs-from-git")
+        if not libs:
+            return None
+        libs_list = libs.split()
+        if len(libs_list) == 0:
+            return None
+        ret = {"as_string": "", "packages": []}
+        names = []
+        for i in libs_list:
+            lib_name_and_branch = i.split("|")
+            if len(lib_name_and_branch) == 2:
+                name, branch = lib_name_and_branch
+            else:
+                name = lib_name_and_branch[0]
+                branch = self.config.get('zuul-branch') 
+            names.append(name)
+            ret["packages"].append({"name": self._sanitize_package_name(name), "branch": branch})
+        ret["as_string"] = " ".join(names)
+        return ret
+
+    def _sanitize_package_name(self, name):
+        if name.startswith("python-"):
+            return "-".join(name.split("-")[1:])
+        return name
 
     def _install_pip(self):
         get_pip = "/tmp/get-pip.py"
@@ -530,6 +558,11 @@ class Devstack(object):
             run_command(args, username=self.username)
         except Exception as err:
             hookenv.log("Error running unstack: %s" % err)
+        subprocess.check_call(
+            [
+                "chown", "%s:%s" % (self.username, self.username),
+                "-R", "/opt"
+            ])
         args = [
             stack,
         ]
@@ -609,7 +642,7 @@ class Devstack(object):
         self._install_pip()
         self._set_pip_mirror()
         self._clone_devstack()
-        self._clone_extra_repos()
+        #self._clone_extra_repos()
         self._render_localconf(self.context)
         self._render_local_sh(self.context)
         if self.prep_project:
