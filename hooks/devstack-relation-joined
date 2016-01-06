@@ -17,12 +17,20 @@
 
 from charmhelpers.core import hookenv
 import devstack
+import socket
+import netaddr
 
+def resolve_address(addr):
+    try:
+        netaddr.IPAddress(addr)
+        return addr
+    except netaddr.core.AddrFormatError:
+        return socket.gethostbyname(addr)
 
 def main():
     d = devstack.Devstack(username=devstack.DEFAULT_USER)
     settings = {
-        'devstack_ip': hookenv.unit_private_ip(),
+        'devstack_ip': resolve_address(hookenv.unit_private_ip()),
         'password': d.password,
         'rabbit_user': d.rabbit_user,
     }
