@@ -23,6 +23,8 @@ import shutil
 import netifaces
 import json
 import base64
+import socket
+import netaddr
 
 from os import urandom
 from itertools import islice, imap, repeat
@@ -350,7 +352,18 @@ class Devstack(object):
             if i.upper() in iface_by_mac:
                 return iface_by_mac[i.upper()]
         raise Exception("Could not find port. Looked for: %s" % ports)
-
+    
+    def _resolve_address(self, addr):
+        try:
+            netaddr.IPAddress(addr)
+            return addr
+        except netaddr.core.AddrFormatError:
+            try
+                return socket.gethostbyname(addr)
+            except socket.gaierror:
+                # This is a network unreachable error... fallback to original addr
+                return addr
+                
     def _get_context(self):
         context = {
             "devstack_ip": None,
@@ -380,7 +393,7 @@ class Devstack(object):
                 context[k] = val
 
         # add dynamic variables here
-        context["devstack_ip"] = hookenv.unit_private_ip()
+        context["devstack_ip"] = self._resolve_address(hookenv.unit_private_ip())
         context["password"] = self.password
         if self.config.get("disable-ipv6"):
             context["ip_version"] = 4
