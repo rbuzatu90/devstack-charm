@@ -358,8 +358,12 @@ class Devstack(object):
             netaddr.IPAddress(addr)
             return addr
         except netaddr.core.AddrFormatError:
-            return socket.gethostbyname(addr)
-            
+            try
+                return socket.gethostbyname(addr)
+            except socket.gaierror:
+                # This is a network unreachable error... fallback to original addr
+                return addr
+                
     def _get_context(self):
         context = {
             "devstack_ip": None,
