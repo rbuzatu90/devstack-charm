@@ -17,12 +17,22 @@
 
 from charmhelpers.core import hookenv
 import devstack
+import socket
+import netaddr
+
+def resolve_address(addr):
+    try:
+        netaddr.IPAddress(addr)
+        return addr
+    except netaddr.core.AddrFormatError:
+        return socket.gethostbyname(addr)
+
 
 
 def main():
     d = devstack.Devstack(username=devstack.DEFAULT_USER)
     settings = {
-        'glance-api-server': "http://%s:9292" % hookenv.unit_private_ip(),
+        'glance-api-server': "http://%s:9292" % resolve_address(hookenv.unit_private_ip()),
     }
     hookenv.relation_set(relation_id=None, **settings)
 

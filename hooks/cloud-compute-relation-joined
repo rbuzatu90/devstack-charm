@@ -17,11 +17,19 @@
 
 from charmhelpers.core import hookenv
 import devstack
+import socket
+import netaddr
 
+def resolve_address(addr):
+    try:
+        netaddr.IPAddress(addr)
+        return addr
+    except netaddr.core.AddrFormatError:
+        return socket.gethostbyname(addr)
 
 def main():
     d = devstack.Devstack(username=devstack.DEFAULT_USER)
-    ip = hookenv.unit_private_ip()
+    ip = resolve_address(hookenv.unit_private_ip())
     settings = {
         'neutron_url': "http://%s:9696" % ip,
         'auth_host': ip,

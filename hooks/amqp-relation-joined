@@ -25,6 +25,7 @@ def main():
         'password': d.password,
         'username': d.rabbit_user,
         'vhost': '/',
+        'hostname': hookenv.unit_private_ip(),
     }
     hookenv.relation_set(relation_id=None, **settings)
 
