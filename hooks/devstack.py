@@ -541,22 +541,20 @@ class Devstack(object):
         run_command([get_pip, ], username="root")
 
     def _set_pip_mirror(self):
-        pypi_mirror = self.config.get("pypi-mirror")
-        if pypi_mirror is None:
+        pypi_mirrors = list(set(self.config.get("pypi-mirror").split()))
+        mirror_hosts = list(set(urlparse.urlparse(m).hostname for m in pypi_mirrors))
+        if not pypi_mirrors:
             return
         # generate config
         config = ConfigParser.RawConfigParser()
         config.add_section('global')
-        config.set('global', 'index-url', pypi_mirror)
-        # create pip folder
-        home = self.pwd.pw_dir
-        pip_dir = os.path.join(home, ".pip")
-        if os.path.isdir(pip_dir) is False:
-            os.makedirs(pip_dir, 0o755)
-            os.chown(pip_dir, self.pwd.pw_uid, self.pwd.pw_gid)
-        pip_conf = os.path.join(pip_dir, "pip.conf")
-        # write pip config
-        with open(pip_conf, "wb") as fd:
+        config.add_section('install')
+        config.set('global', 'index-url', pypi_mirrors[0])
+        if len(pypi_mirrors) > 1:
+            config.set('global', 'extra-index-url', ' '.join(m for m in pypi_mirrors[1:]))
+        config.set('install', 'trusted-host', ' '.join(h for h in mirror_hosts))
+        # Set the mirror os-wide and write it
+        with open("/etc/pip.conf", "wb") as fd:
             config.write(fd)
         return True
 
