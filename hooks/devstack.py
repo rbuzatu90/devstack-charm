@@ -21,7 +21,7 @@ import ConfigParser
 import urllib2
 import shutil
 import netifaces
-import json
+import yaml
 import base64
 import netaddr
 import socket
@@ -124,7 +124,7 @@ class DevstackContext(object):
             creds = self.relation_data[i].get("ad_credentials")
             if not creds:
                 continue
-            credential_data = json.loads(base64.b64decode(creds).decode("utf-16"))
+            credential_data = yaml.load(base64.b64decode(creds).decode("utf-16"))
             with open(location, "wb") as fd:                                    
                 for i in credential_data.keys():                                          
                     fd.write("%s=%s\n" % (i.upper(), credential_data[i]))
