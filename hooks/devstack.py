@@ -450,6 +450,7 @@ class Devstack(object):
     def _get_context(self):
         context = {
             "devstack_ip": None,
+            "tunnel_endpoint_ip": None,
             "enabled_services": None,
             "ml2_mechanism": None,
             "tenant_network_type": None,
@@ -481,6 +482,7 @@ class Devstack(object):
 
         # add dynamic variables here
         context["devstack_ip"] = self._resolve_address(hookenv.unit_private_ip())
+        context["tunnel_endpoint_ip"] = netifaces.ifaddresses(self._get_data_port())[AF_INET][0]['addr']
         context["password"] = self.password
         if self.config.get("disable-ipv6"):
             context["ip_version"] = 4
