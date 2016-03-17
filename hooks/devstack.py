@@ -481,8 +481,18 @@ class Devstack(object):
                 context[k] = val
 
         # add dynamic variables here
-        context["devstack_ip"] = self._resolve_address(hookenv.unit_private_ip())
-        context["tunnel_endpoint_ip"] = netifaces.ifaddresses(self._get_data_port())[netifaces.AF_INET][0]['addr']
+        devstack_ip = self._resolve_address(hookenv.unit_private_ip())
+        hookenv.log("Setting devstack_ip to: %s" % devstack_ip)
+        context["devstack_ip"] = devstack_ip
+        if context["enable_tunneling"]:
+            data_port = self._get_data_port()
+            try:
+                data_port_ip = netifaces.ifaddresses(data_port)[netifaces.AF_INET][0]['addr']
+            except KeyError:
+                data_port = data_port.replace("br-", "")
+                data_port_ip = netifaces.ifaddresses(data_port)[netifaces.AF_INET][0]['addr']
+            hookenv.log("Using data port %s with IP %s for OVS local_ip" % (data_port, data_port_ip))
+            context["tunnel_endpoint_ip"] = data_port_ip
         context["password"] = self.password
         if self.config.get("disable-ipv6"):
             context["ip_version"] = 4
