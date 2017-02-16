@@ -1,0 +1,178 @@
+options:
+  nameservers:
+    type: string
+    description: "space separated list of nameservers"
+    default: "8.8.8.8 8.8.4.4"
+  zuul-url:
+    type: string
+    description: "The zuul URL from which we fetch the git repositories"
+  zuul-branch:
+    type: string
+    description: |
+      "Branch we are testing (master, stable/juno, stable/kilo, etc)"
+  zuul-change:
+    type: string
+    description: "patches we are testing"
+  zuul-ref:
+    type: string
+    description: "zuul reference number"
+  zuul-project:
+    type: string
+    description: "Project we are testing (openstack/nova, openstack/neutron, etc)"
+  extra-repos:
+    type: string
+    description: |
+      A space delimited list of repositories to clone. These repositories need to be
+      formated as follows: giturl|revision|location.
+      Example https://github.com/openstack/keystone|b6c70ce|/opt/stack/keystone
+  vlan-range:
+    type: string
+    description: "vlan ranges to alocate"
+  static-mirror:
+    type: string
+    description: "Location that holds static files like cirros/fedora images"
+  pypi-mirror:
+    type: string
+    description: "PyPi mirror to use"
+  external-port:
+    type: string
+    description: "list of space delimited MAC addresses to use as external ports"
+  data-port:
+    type: string
+    description: "list of space delimited MAC addresses to use as data ports"
+  disable-ipv6:
+    type: boolean
+    default: True
+    description: "By default devstack runs in dual stack mode. This option forces devstack to only use IPv4"
+  ml2-mechanism:
+    type: string
+    default: "openvswitch,hyperv"
+    description: "Mechanism drivers to use for neutron"
+  tenant-network-type:
+    type: string
+    default: "vlan"
+    description: |
+      Tenan isolation type. Options are:
+      * vlan
+      * vxlan
+      * gre
+      * local
+  locarc-extra-blob:
+    type: string
+    description: "This blob will be appended at the end of local.conf"
+  enable-tunneling:
+    type: boolean
+    default: False
+    description: "Enable or disable tunneling"
+  enable-vlans:
+    type: boolean
+    default: True
+    description: "Enable or disable vlan support"
+  enable-live-migration:
+    type: boolean
+    default: False
+    description: "Enable or disable live migration"
+  ceilometer-backend:
+    type: string
+    default: "mongodb"
+    description: "Database backend to use for ceilometer"
+  verbose:
+    type: boolean
+    default: True
+    description: "Verbose output"
+  debug:
+    type: boolean
+    default: True
+    description: "Debug output"
+  same-host-resize:
+    type: boolean
+    default: True
+    description: |
+      Allow same host resize. The allow_resize_to_same_host will be set both
+      in the devstack nova.conf and in the remote compute node config. This option
+      will be advertised as part of the relationship information.
+  test-image-url:
+    type: string
+    default: "file:///home/ubuntu/devstack/files/images/cirros-0.3.3-x86_64.vhdx"
+    description: "Tempest test image URL"
+  heat-image-url:
+    type: string
+    default: "file:///home/ubuntu/devstack/files/images/Fedora-x86_64-20-20140618-sda.vhdx"
+    description: "Heat test image URL"
+  enabled-services:
+    type: string
+    default: "rabbit mysql key n-api n-crt n-obj n-cond n-sch n-cauth neutron q-svc q-agt q-dhcp q-l3 q-meta q-lbaas q-fwaas q-metering q-vpn g-api g-reg cinder c-api c-vol c-sch c-bak s-proxy s-object s-container s-account heat h-api h-api-cfn h-api-cw h-eng ceilometer-acentral ceilometer-collector ceilometer-api ceilometer-anotification tempest"
+    description: "List of services to enable"
+  disabled-services:
+    type: string
+    description: "List of services to disable"
+  enable-plugin:
+    type: string
+    description: |
+      Space delimited list of plugins to enable. format is as follows:
+        plugin-name|URL|GITREF
+  extra-python-packages:
+    type: string
+    description: "extra python packages to install"
+  extra-packages:
+    type: string
+    description: "extra system packages to install"
+  ntp-server:
+    type: string
+    description: "Ntp server to use"
+    default: time.windows.com
+  heartbeat-threshold:
+    type: int
+    description: "rabbitmq heartbeat threshold"
+    default: 90
+  heartbeat-rate:
+    type: int
+    description: "rabbitmq heartbeat timeout"
+    default: 30
+  prep-project:
+    type: boolean
+    default: true
+    description: |
+        Set this to false if you do not wish devstack to do a gerrit-git-prep
+        on the project defined in zuul-project. Note zuul-branch should still
+        be set.
+  tenant-name:
+    type: string
+    default: "service"
+    description: "Service tenant name"
+  use-bonding:
+    type: boolean
+    default: false
+    description: "enable bonding. If this is set"
+  bond-ports:
+    type: string
+    description: "list of space delimited MAC addresses to use as bond-ports"
+  bonding-mode:
+    type: int
+    default: 4
+    description: "Bongind mode. Default is LACP (4)"
+  scenario-img:
+    type: string
+    default: "cirros.vhdx"
+    description: |
+      This option allows you to specify the image you want to use for scenarios.
+      The test-image-url allows you to download multiple images before stacking. This option
+      allows you to specify one of those files as the actual image. Use only the basename (eg: cirros.vhdx)
+  ssh-user:
+    type: string
+    default: "cirros"
+    description: "ssh user used by tempest in scenarios"
+  libs-from-git:
+    type: string
+    description: |
+      Space delimited list of packages devstack should install from git. Format is as follows:
+
+        python-openstackclient|master
+
+      This will set python-openstackclient in LIBS_FROM_GIT and will set OPENSTACKCLIENT_BRANCH=master
+      If the branch is ommited, zuul-branch will be used
+  pip-version:
+    type: string
+    default: ""
+    description: |
+      Version of pip to install, example: pip==8.1.1

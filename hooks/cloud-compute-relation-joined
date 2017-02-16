@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+# Copyright 2015 Cloudbase Solutions SRL
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+from charmhelpers.core import hookenv
+import devstack
+import socket
+import netaddr
+
+def resolve_address(addr):
+    try:
+        netaddr.IPAddress(addr)
+        return addr
+    except netaddr.core.AddrFormatError:
+        return socket.gethostbyname(addr)
+
+def main():
+    d = devstack.Devstack(username=devstack.DEFAULT_USER)
+    ip = resolve_address(hookenv.unit_private_ip())
+    settings = {
+        'neutron_url': "http://%s:9696" % ip,
+        'auth_host': ip,
+        'auth_port': "35357",
+        'auth_protocol': 'http',
+        'service_tenant_name': d.config.get("tenant-name", "service"),
+        'service_username': 'neutron',
+        'service_password': d.password, 
+    }
+    hookenv.relation_set(relation_id=None, **settings)
+
+if __name__ == "__main__":
+    main()
+
