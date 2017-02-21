@@ -21,10 +21,10 @@ from devstack import run_command
 
 def start_poststack():
     poststack = "/home/ubuntu/devstack/poststack.sh"
-        args = [
-            poststack,
-        ]
-        run_command(args)
+    args = [
+        poststack,
+    ]
+    run_command(args)
 
 
 if __name__ == '__main__':
