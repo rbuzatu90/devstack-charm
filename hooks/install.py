@@ -14,27 +14,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import setup
+setup.pre_install()
+
+import devstack
 
 from charmhelpers.core import hookenv
-import devstack
-import socket
-import netaddr
 
-def resolve_address(addr):
-    try:
-        netaddr.IPAddress(addr)
-        return addr
-    except netaddr.core.AddrFormatError:
-        return socket.gethostbyname(addr)
 
-def main():
+def install():
+    hookenv.log('Installing devstack')
+    config = hookenv.config()
+    use_bonding = config.get("use-bonding", False)
+    if use_bonding:
+        b = devstack.Bonding()
+        b.run()
+    # add steps for installing dependencies and packages here
+    # e.g.: from charmhelpers import fetch
+    #       fetch.apt_install(fetch.filter_installed_packages(['nginx']))
+    devstack.install_extra_packages()
+    devstack.sync_time()
     d = devstack.Devstack(username=devstack.DEFAULT_USER)
-    settings = {
-        'devstack_ip': resolve_address(hookenv.unit_private_ip()),
-        'password': d.password,
-        'rabbit_user': d.rabbit_user,
-    }
-    hookenv.relation_set(relation_id=None, **settings)
+    d.run()
+
 
 if __name__ == "__main__":
-    main()
+    install()

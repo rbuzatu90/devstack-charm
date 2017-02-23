@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+
+set +e
 
 function checkservicestatus () {
     local SERVICE=$1
@@ -10,19 +11,20 @@ function checkservicestatus () {
     if [ "$SERVICE" == "nova" ]; then
         STATUS_LIST="nova service-list"
         SERVICE_COUNT="2"
-        CMD=$(nova service-list | grep nova-compute | grep -c -w up)
+        CMD='nova service-list | grep nova-compute | grep -c -w up'
     elif [ "$SERVICE" == "neutron-hyperv" ]; then
         STATUS_LIST="neutron agent-list"
         SERVICE_COUNT="2"
-        CMD=$(neutron agent-list | grep -c "HyperV agent.*:-)")
+        CMD='neutron agent-list | grep -c "HyperV agent.*:-)"'
     else
         STATUS_LIST="neutron agent-list"
         SERVICE_COUNT="3"
-        CMD=$(neutron agent-list | grep -c "Open vSwitch agent.*:-)")
+        CMD='neutron agent-list | grep -c "Open vSwitch agent.*:-)"'
     fi
 
     while [ $COUNTER -lt $MAX_RETRIES ]; do
-        if [ "$CMD" == $SERVICE_COUNT ]; then
+	RUN_CMD=$(eval $CMD)
+        if [ "$RUN_CMD" == $SERVICE_COUNT ]; then
             echo "$SERVICE HyperV services are up"
             return 0
         else
