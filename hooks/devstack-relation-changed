@@ -16,20 +16,11 @@
 
 
 import devstack
-
-from devstack import run_command
-
-def start_poststack():
-    poststack = "/home/ubuntu/devstack/poststack.sh"
-    args = [
-        poststack,
-    ]
-    run_command(args)
-
+from charmhelpers.core.hookenv import status_set, log
 
 if __name__ == '__main__':
     ctx = devstack.DevstackContext(username=devstack.DEFAULT_USER)
     ctx.render_ad_credentials()
     ctx.render_nodes()
-    start_poststack()
-
+    log('Waiting for status-update hook to run in order to configure tempest and enable cell_v2 if necessary', 'INFO')
+    status_set('waiting', 'Waiting for status-update hook to run')

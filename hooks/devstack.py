@@ -412,14 +412,14 @@ class Devstack(object):
             owner=self.username, group=self.username)
         os.chmod(conf_dest, 0o755)
 
-    def _render_poststack_sh(self, context):
+    def _render_poststack_params(self, context):
         devstack = self._devstack_location()                                    
         rabbit_user = self.rabbit_user
         context["devstack_location"] = devstack
         context["rabbit_user"] = rabbit_user
-        conf_dest = os.path.join(devstack, "poststack.sh")                        
+        conf_dest = os.path.join(devstack, "poststack.params")                        
         templating.render(                                                      
-            "poststack.sh", conf_dest, context,                                   
+            "poststack.params", conf_dest, context,                                   
             owner=self.username, group=self.username)
         os.chmod(conf_dest, 0o755)
 
@@ -691,7 +691,7 @@ class Devstack(object):
         #self._clone_extra_repos()
         self._render_localconf(self.context)
         self._render_local_sh(self.context)
-        self._render_poststack_sh(self.context)
+        self._render_poststack_params(self.context)
         if self.prep_project:
             self.project.run()
         self._run_stack_sh()
