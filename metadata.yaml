@@ -1,0 +1,20 @@
+name: devstack
+summary: "devstack charm"
+maintainer: Gabriel Adrian Samfira <gsamfira@cloudbasesolutions.com>
+description: |
+  This charm is meant to be used as part of a CI environment.
+tags:
+  - CI
+subordinate: false
+provides:
+  devstack:
+    interface: devstack
+  amqp:
+    interface: rabbitmq
+  image-service:
+    interface: glance
+  nova-ceilometer:
+    interface: nova-ceilometer
+requires:
+  cloud-compute:
+    interface: nova-compute

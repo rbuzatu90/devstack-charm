@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set +e
+
+# Install python2.7 for Ubuntu Xenial
+version=$(python -V 2>&1 | grep -Po '(?<=Python )(.)')
+if [ "$version" != "2" ]; then
+	apt-get install -y python
+fi
+
+# Start the install hook
+set -e
+python $JUJU_CHARM_DIR/hooks/install.py

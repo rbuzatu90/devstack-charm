@@ -1,0 +1,79 @@
+#!/bin/bash
+
+set +e
+
+source /home/ubuntu/devstack/functions
+source /home/ubuntu/devstack/functions-common
+source /home/ubuntu/devstack/poststack.params
+source /home/ubuntu/keystonerc
+
+NOVA_COUNT="2"
+OVS_COUNT="3"
+HYPERV_COUNT="2"
+
+CELL_STATUS=$(nova-manage cell_v2 list_cells | grep 'None')
+if [ "$CELL_STATUS" ]; then
+        juju-log "cell_v2 already setup. Exiting silently"
+        exit 0
+fi
+
+NOVA_STATUS=$(nova service-list | grep nova-compute | grep -c -w up)
+if [ "$NOVA_STATUS" != $NOVA_COUNT ]; then
+        juju-log "Both Nova Hyper-V services must be up"
+        status-set waiting "Waiting on Hyper-V Compute services to be ready"
+        exit 0
+fi
+
+NEUTRON_DRIVER=$(config-get ml2-mechanism)
+if [ "$NEUTRON_DRIVER" == "openvswitch" ]; then
+	OVS_STATUS=$(neutron agent-list | grep -c "Open vSwitch agent.*:-)")
+        if [ "$OVS_STATUS" != $OVS_COUNT ]; then
+                juju-log "Both Hyper-V OpenvSwitch services must be up"
+                status-set waiting "Waiting on OVS Hyper-V services to be ready"
+                exit 0
+        fi
+else
+	HYPERV_STATUS=$(neutron agent-list | grep -c "HyperV agent.*:-)")
+        if [ "$HYPERV_STATUS" != $HYPERV_COUNT ]; then
+                juju-log "Both Hyper-V Networking services must be up"
+                status-set waiting "Waiting on Networking Hyper-V services to be ready"
+                exit 0
+        fi
+fi
+
+# For master or Ocata branch activate cell_v2
+ZUUL_BRANCH=$(config-get zuul-branch)
+if [[ "$ZUUL_BRANCH" == "master" ]] || [[ "$ZUUL_BRANCH" == "stable/ocata" ]]; then
+        echo "running: nova-manage cell_v2 --transport-url $transport_url"
+        nova-manage cell_v2 simple_cell_setup --transport-url $transport_url >> /opt/stack/logs/screen/create_cell.log
+fi
+
+# Configure tempest.conf
+TEMPEST_CONFIG=/opt/stack/tempest/etc/tempest.conf
+
+iniset $TEMPEST_CONFIG compute volume_device_name "sdb"
+iniset $TEMPEST_CONFIG compute-feature-enabled rdp_console true
+iniset $TEMPEST_CONFIG compute-feature-enabled block_migrate_cinder_iscsi False
+
+iniset $TEMPEST_CONFIG scenario img_dir "/home/ubuntu/devstack/files/images/"
+iniset $TEMPEST_CONFIG scenario img_file cirros-latest.vhdx
+iniset $TEMPEST_CONFIG scenario img_disk_format vhd
+
+IMAGE_REF=$(iniget $TEMPEST_CONFIG compute image_ref)
+iniset $TEMPEST_CONFIG compute image_ref_alt $IMAGE_REF
+
+iniset $TEMPEST_CONFIG compute ssh_user cirros
+iniset $TEMPEST_CONFIG compute image_alt_ssh_user cirros
+iniset $TEMPEST_CONFIG compute image_ssh_user cirros
+iniset $TEMPEST_CONFIG compute ssh_timeout 180
+
+iniset $TEMPEST_CONFIG compute build_timeout 300
+iniset $TEMPEST_CONFIG orchestration build_timeout 600
+iniset $TEMPEST_CONFIG volume build_timeout 300
+iniset $TEMPEST_CONFIG boto build_timeout 300
+
+iniset $TEMPEST_CONFIG compute ssh_timeout 600
+iniset $TEMPEST_CONFIG compute allow_tenant_isolation True
+
+status-set active
+
