@@ -11,12 +11,6 @@ NOVA_COUNT="2"
 OVS_COUNT="3"
 HYPERV_COUNT="2"
 
-CELL_STATUS=$(nova-manage cell_v2 list_cells | grep 'None')
-if [ "$CELL_STATUS" ]; then
-        juju-log "cell_v2 already setup. Exiting silently"
-        exit 0
-fi
-
 NOVA_STATUS=$(nova service-list | grep nova-compute | grep -c -w up)
 if [ "$NOVA_STATUS" != $NOVA_COUNT ]; then
         juju-log "Both Nova Hyper-V services must be up"
@@ -41,11 +35,17 @@ else
         fi
 fi
 
+CHARM_STATUS=$(status-get)
+if [ "$CHARM_STATUS" == "active" ]; then
+        juju-log "All seems OK, exiting silently"
+        exit 0
+fi
+
 # For master or Ocata branch activate cell_v2
 ZUUL_BRANCH=$(config-get zuul-branch)
 if [[ "$ZUUL_BRANCH" == "master" ]] || [[ "$ZUUL_BRANCH" == "stable/ocata" ]]; then
-        echo "running: nova-manage cell_v2 --transport-url $transport_url"
-        nova-manage cell_v2 simple_cell_setup --transport-url $transport_url >> /opt/stack/logs/screen/create_cell.log
+       	echo "running: nova-manage cell_v2 --transport-url $transport_url"
+       	nova-manage cell_v2 simple_cell_setup --transport-url $transport_url >> /opt/stack/logs/screen/create_cell.log
 fi
 
 # Configure tempest.conf

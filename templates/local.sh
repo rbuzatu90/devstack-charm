@@ -3,6 +3,7 @@ set -e
 
 source {{devstack_location}}/functions
 source {{devstack_location}}/functions-common
+branch={{zuul_branch}}
 
 echo "Before updating nova flavors:"
 nova flavor-list
