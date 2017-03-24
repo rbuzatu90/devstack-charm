@@ -683,10 +683,31 @@ class Devstack(object):
             run_command(args, username=self.username)
             args = ["git", "checkout", rev]
             run_command(args, username=self.username, cwd=dst)
-            
+
+    def _cherry_pick(self):
+        cps = self.config.get("cherry-picks")
+        if cps is None:
+            return
+        cherry_picks = cps.split(',')
+        for cherry_pick in cherry_picks:
+            url, ref, branch = cherry_pick.split('|')
+            if self.config.get("zuul-branch") == branch:
+                project = url.rsplit('/', 1)[-1]
+                dst = '/opt/stack/%' % project
+                if not os.path.isdir(dst):
+                    run_command(['git', 'clone', url, dst], username=self.username)
+                run_command(['git', 'checkout', branch], username=self.username, cwd=dst)
+                run_command(['git', 'pull'], username=self.username, cwd=dst)
+                run_command(['git', 'fetch', url, ref], username=self.username, cwd=dst) 
+                try:
+                    run_command(['git', 'cherry-pick', 'FETCH_HEAD'], username=self.username, cwd=dst)
+                except:
+                    run_command(['git', 'cherry-pick', '--abort'], username=self.username, cwd=dst)
+
     def run(self):
         self._install_pip()
         self._set_pip_mirror()
+        self._cherry_pick()
         self._clone_devstack()
         #self._clone_extra_repos()
         self._render_localconf(self.context)

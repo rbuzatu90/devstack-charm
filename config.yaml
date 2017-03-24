@@ -176,3 +176,11 @@ options:
     default: ""
     description: |
       Version of pip to install, example: pip==8.1.1
+  cherry-picks:
+    type: string
+    default: ""
+    description: |
+      Comma separated list of cherry picks to apply before building devstack
+      Example 
+        https://review.openstack.org/openstack/neutron|refs/changes/41/417141/2|master,
+        https://review.openstack.org/openstack/neutron|refs/changes/41/417141/2|master
