@@ -363,6 +363,7 @@ class Devstack(object):
         self.config = hookenv.config()
         self.context = self._get_context()
         self.prep_project = self.config.get('prep-project')
+        self.charm_dir = os.environ.get("CHARM_DIR")
 
     @property
     def rabbit_user(self):
