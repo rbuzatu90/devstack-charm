@@ -390,7 +390,8 @@ class Devstack(object):
     def _clone_devstack(self):
         location = self._devstack_location()
         if os.path.exists(location):
-            shutil.rmtree(location)
+            #shutil.rmtree(location)
+            return
         args = ["git", "clone", DEVSTACK_REPOSITORY, location]
         run_command(args, username=self.username)
         args = ["git", "checkout", self.config.get('zuul-branch'), ]
@@ -708,9 +709,35 @@ class Devstack(object):
                 except:
                     run_command(['git', 'cherry-pick', '--abort'], username=self.username, cwd=dst)
 
+    def _update_devstack_repos(self):
+        if self.config.get('zuul-project') is None:   
+            return
+        script = os.path.join(
+            self.charm_dir, "files", "update-devstack-repos.sh")
+        if os.path.isfile(script) is False:
+            raise Exception("Could not find update-devstack-repos.sh")
+        if os.access(script, os.X_OK) is False:
+            os.chmod(script, 0o755)
+        args = [
+            script,
+            '--branch',
+             self.config.get("zuul-branch"),
+             '--project',
+             self.config.get("zuul-branch"),
+             '--devstack-git-archive',
+             self.config.get("devstack-git-archive"),
+             '--stack-git-archive',
+             self.config.get("stack-git-archive")
+        ]
+
+        run_command(
+            args,
+            username=self.username)
+
     def run(self):
         self._install_pip()
         self._set_pip_mirror()
+        self._update_devstack_repos()
         self._cherry_pick()
         self._clone_devstack()
         #self._clone_extra_repos()
