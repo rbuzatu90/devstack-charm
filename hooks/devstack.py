@@ -693,7 +693,7 @@ class Devstack(object):
             url, ref, branch = cherry_pick.split('|')
             if self.config.get("zuul-branch") == branch:
                 project = url.rsplit('/', 1)[-1]
-                dst = '/opt/stack/%' % project
+                dst = '/opt/stack/%s' % project
                 if not os.path.isdir(dst):
                     run_command(['git', 'clone', url, dst], username=self.username)
                 run_command(['git', 'checkout', branch], username=self.username, cwd=dst)
