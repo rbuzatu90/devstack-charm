@@ -694,7 +694,11 @@ class Devstack(object):
             if self.config.get("zuul-branch") == branch:
                 project = url.rsplit('/', 1)[-1]
                 dst = '/opt/stack/%s' % project
+                run_command(['git', 'config', '--global', 'user.email', 'hyper-v_ci@microsoft.com'], username=self.username)
+                run_command(['git', 'config', '--global', 'user.name', 'Hyper-V CI'], username=self.username)
                 if not os.path.isdir(dst):
+                    os.makedirs(dst, 0o755)
+                    os.chown(dst, self.pwd.pw_uid, self.pwd.pw_gid)
                     run_command(['git', 'clone', url, dst], username=self.username)
                 run_command(['git', 'checkout', branch], username=self.username, cwd=dst)
                 run_command(['git', 'pull'], username=self.username, cwd=dst)
