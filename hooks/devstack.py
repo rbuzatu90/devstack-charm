@@ -697,8 +697,8 @@ class Devstack(object):
                 run_command(['git', 'config', '--global', 'user.email', 'hyper-v_ci@microsoft.com'], username=self.username)
                 run_command(['git', 'config', '--global', 'user.name', 'Hyper-V CI'], username=self.username)
                 if not os.path.isdir(dst):
-                    os.makedirs(dst, 0o755)
-                    os.chown(dst, self.pwd.pw_uid, self.pwd.pw_gid)
+                    run_command(['mkdir', '/opt/stack'], username='root')
+                    run_command(['chown', 'ubuntu', '/opt/stack'], username='root')                    
                     run_command(['git', 'clone', url, dst], username=self.username)
                 run_command(['git', 'checkout', branch], username=self.username, cwd=dst)
                 run_command(['git', 'pull'], username=self.username, cwd=dst)
