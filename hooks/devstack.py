@@ -365,16 +365,16 @@ class Devstack(object):
         self.prep_project = self.config.get('prep-project')
         self.charm_dir = os.environ.get("CHARM_DIR")
 
-    @property
-    def rabbit_user(self):
-        branch = self.config.get('zuul-branch')
+    @staticmethod
+    def rabbit_user():
+        branch = hookenv.config().get('zuul-branch')
         if branch in ("stable/icehouse", "stable/juno"):
             return "guest"
         return "stackrabbit"
 
-    @property
-    def password(self):
-        devstack_passwd = os.path.join(self.pwd.pw_dir, "devstack_passwd")
+    @staticmethod
+    def password():
+        devstack_passwd = os.path.join(pwd.getpwnam(DEFAULT_USER).pw_dir, "devstack_passwd")
         passwd = rand_string(32)
         if os.path.isfile(devstack_passwd) is False:
             with open(devstack_passwd, "wb") as fd:
@@ -416,7 +416,7 @@ class Devstack(object):
 
     def _render_poststack_params(self, context):
         devstack = self._devstack_location()                                    
-        rabbit_user = self.rabbit_user
+        rabbit_user = self.rabbit_user()
         context["devstack_location"] = devstack
         context["rabbit_user"] = rabbit_user
         conf_dest = os.path.join(devstack, "poststack.params")                        
@@ -506,7 +506,7 @@ class Devstack(object):
                 data_port_ip = netifaces.ifaddresses(data_port)[netifaces.AF_INET][0]['addr']
             hookenv.log("Using data port %s with IP %s for OVS local_ip" % (data_port, data_port_ip))
             context["tunnel_endpoint_ip"] = data_port_ip
-        context["password"] = self.password
+        context["password"] = self.password()
         if self.config.get("disable-ipv6"):
             context["ip_version"] = 4
         if self.config.get("locarc-extra-blob"):
@@ -631,7 +631,7 @@ class Devstack(object):
 
     def _write_keystonerc(self):
         location = os.path.join(self.pwd.pw_dir, "keystonerc")
-        tpl = KEYSTONERC % self.password
+        tpl = KEYSTONERC % self.password()
         with open(location, "wb") as fd:
             fd.write(tpl)
 

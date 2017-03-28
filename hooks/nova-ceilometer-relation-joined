@@ -30,11 +30,10 @@ def resolve_address(addr):
 
 
 def main():
-    d = devstack.Devstack(username=devstack.DEFAULT_USER)
     settings = {
         'rabbit_host': resolve_address(hookenv.unit_private_ip()),
-        'rabbit_password': d.password,
-        'rabbit_userid': d.rabbit_user,
+        'rabbit_password': devstack.Devstack.password(),
+        'rabbit_userid': devstack.Devstack.rabbit_user(),
         'rabbit_virtual_host': "/",
     }
     hookenv.relation_set(relation_id=None, **settings)

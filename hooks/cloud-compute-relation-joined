@@ -28,16 +28,15 @@ def resolve_address(addr):
         return socket.gethostbyname(addr)
 
 def main():
-    d = devstack.Devstack(username=devstack.DEFAULT_USER)
     ip = resolve_address(hookenv.unit_private_ip())
     settings = {
         'neutron_url': "http://%s:9696" % ip,
         'auth_host': ip,
         'auth_port': "35357",
         'auth_protocol': 'http',
-        'service_tenant_name': d.config.get("tenant-name", "service"),
+        'service_tenant_name': hookenv.config().get("tenant-name", "service"),
         'service_username': 'neutron',
-        'service_password': d.password, 
+        'service_password': devstack.Devstack.password(), 
     }
     hookenv.relation_set(relation_id=None, **settings)
 

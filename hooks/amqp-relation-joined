@@ -20,10 +20,9 @@ import devstack
 
 
 def main():
-    d = devstack.Devstack(username=devstack.DEFAULT_USER)
     settings = {
-        'password': d.password,
-        'username': d.rabbit_user,
+        'password': devstack.Devstack.password(),
+        'username': devstack.Devstack.rabbit_user(),
         'vhost': '/',
         'hostname': hookenv.unit_private_ip(),
     }
