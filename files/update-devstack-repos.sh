@@ -54,15 +54,19 @@ if [ ! -z "$DEVSTACK_ARCHIVE_URL" ]; then
     if [ -d "/home/ubuntu/devstack" ]; then
         echo "Updating devstack git repo"
         pushd /home/ubuntu/devstack
-        git reset --hard
-        git clean -f -d
-        git fetch
-        git checkout "$ZUUL_BRANCH" || echo "Failed to switch branch $ZUUL_BRANCH"
-        git pull
-        echo "Devstack branch:"
-        git branch
-        echo "Devstack git log:"
-        git log -10 --pretty=format:"%h - %an, %ae,  %ar : %s"
+        if [ -d ".git" ]; then
+            git reset --hard
+            git clean -f -d
+            git fetch
+            git checkout "$ZUUL_BRANCH" || echo "Failed to switch branch $ZUUL_BRANCH"
+            git pull
+            echo "Devstack branch:"
+            git branch
+            echo "Devstack git log:"
+            git log -10 --pretty=format:"%h - %an, %ae,  %ar : %s"
+        else
+            echo "Skipping /home/ubuntu/devstack, not a git repo"
+        fi
         popd
     else
         echo "/home/ubuntu/devstack folder not found, not updating"
@@ -93,15 +97,19 @@ if [ ! -z "$STACK_ARCHIVE_URL" ]; then
         for i in $(ls -A); do
             if [ "$i" != "$PROJECT_NAME" ]; then
                 pushd "$i"
-                git reset --hard
-                git clean -f -d
-                git fetch
-                git checkout "$ZUUL_BRANCH" || echo "Failed to switch branch $ZUUL_BRANCH"
-                git pull
-                echo "/opt/stack/$i branch:"
-                git branch
-                echo "/opt/stack/$i git log:"
-                git log -10 --pretty=format:"%h - %an, %ae,  %ar : %s"
+                if [ -d ".git" ]; then
+                    git reset --hard
+                    git clean -f -d
+                    git fetch
+                    git checkout "$ZUUL_BRANCH" || echo "Failed to switch branch $ZUUL_BRANCH"
+                    git pull
+                    echo "/opt/stack/$i branch:"
+                    git branch
+                    echo "/opt/stack/$i git log:"
+                    git log -10 --pretty=format:"%h - %an, %ae,  %ar : %s"
+                else
+                    echo "Skipping /opt/stack/$i, not a git repo"
+                fi
                 popd
             fi
         done
