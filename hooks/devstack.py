@@ -694,12 +694,16 @@ class Devstack(object):
             url, ref, branch = cherry_pick.split('|')
             if self.config.get("zuul-branch") == branch:
                 project = url.rsplit('/', 1)[-1]
-                dst = '/opt/stack/%s' % project
+                if project == 'devstack':
+                    dst = '/home/ubuntu/%s' % project
+                else:
+                    dst = '/opt/stack/%s' % project
                 run_command(['git', 'config', '--global', 'user.email', 'hyper-v_ci@microsoft.com'], username=self.username)
                 run_command(['git', 'config', '--global', 'user.name', 'Hyper-V CI'], username=self.username)
-                if not os.path.isdir(dst):
+                if not os.path.isdir('/opt/stack'):
                     run_command(['mkdir', '/opt/stack'], username='root')
-                    run_command(['chown', 'ubuntu', '/opt/stack'], username='root')                    
+                    run_command(['chown', 'ubuntu', '/opt/stack'], username='root')
+                if not os.path.isdir(dst):
                     run_command(['git', 'clone', url, dst], username=self.username)
                 run_command(['git', 'checkout', branch], username=self.username, cwd=dst)
                 run_command(['git', 'pull'], username=self.username, cwd=dst)
@@ -708,6 +712,8 @@ class Devstack(object):
                     run_command(['git', 'cherry-pick', 'FETCH_HEAD'], username=self.username, cwd=dst)
                 except:
                     run_command(['git', 'cherry-pick', '--abort'], username=self.username, cwd=dst)
+                hookenv.log('%s git log:' % dst)
+                run_command(['git', 'log', '-10', '--pretty=format:"%h - %an, %ae,  %ar : %s"'], username=self.username, cwd=dst)
 
     def _update_devstack_repos(self):
         if self.config.get('zuul-project') is None:   
