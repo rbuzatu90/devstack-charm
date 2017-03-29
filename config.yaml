@@ -184,3 +184,15 @@ options:
       Example 
         https://review.openstack.org/openstack/neutron|refs/changes/41/417141/2|master,
         https://review.openstack.org/openstack/neutron|refs/changes/41/417141/2|master
+  devstack-git-archive:
+    type: string
+    default: http://10.20.1.14:8080/devstack_archives/devstack.tar.gz
+    description: |
+      URL for cached devstack repo archive, set to empty string to clone from github.
+      The charm will download and unpack it to /home/ubuntu/devstack and run git pull and git checkout for ZUUL_BRANCH
+  stack-git-archive:
+    type: string
+    default: http://10.20.1.14:8080/devstack_archives/stack.tar.gz
+    description: |
+      URL for cached /opt/stack repos archive, set to empty string to clone from github.
+      The charm will download and unpack it to /opt/stack and run git pull and git checkout for ZUUL_BRANCH on all projects it contains.
