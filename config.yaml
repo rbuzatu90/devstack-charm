@@ -40,10 +40,10 @@ options:
   data-port:
     type: string
     description: "list of space delimited MAC addresses to use as data ports"
-  disable-ipv6:
-    type: boolean
-    default: True
-    description: "By default devstack runs in dual stack mode. This option forces devstack to only use IPv4"
+  ip-version:
+    type: string
+    default: "4+6"
+    description: "Specify which IP version should Devstack use. You can choose between 4, 6 and 4+6"
   ml2-mechanism:
     type: string
     default: "openvswitch,hyperv"

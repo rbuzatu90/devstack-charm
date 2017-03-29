@@ -485,6 +485,7 @@ class Devstack(object):
             "zuul_branch": None,
             "scenario_img": None,
             "same_host_resize": None,
+            "ip_version": None,
         }
 
         for k, v in context.iteritems():
@@ -507,8 +508,6 @@ class Devstack(object):
             hookenv.log("Using data port %s with IP %s for OVS local_ip" % (data_port, data_port_ip))
             context["tunnel_endpoint_ip"] = data_port_ip
         context["password"] = self.password()
-        if self.config.get("disable-ipv6"):
-            context["ip_version"] = 4
         if self.config.get("locarc-extra-blob"):
             context["locarc_extra_blob"] = self.config.get("locarc-extra-blob")
         if self.config.get("libs-from-git"):
