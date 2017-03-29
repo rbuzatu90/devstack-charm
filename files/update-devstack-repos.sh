@@ -87,7 +87,7 @@ if [ ! -z "$STACK_ARCHIVE_URL" ]; then
                         git checkout "$ZUUL_BRANCH" || echo "Failed to switch branch $ZUUL_BRANCH"
                         git pull
                 fi
-                echo "Folder: $BUILDDIR/$i"
+                echo "Folder: /opt/stack/$i"
                 echo "Git branch output:"
                 git branch
                 if ! [[ $i =~ .*noVNC.* ]]; then
