@@ -37,25 +37,36 @@ echo "    build-for: $ZUUL_PROJECT"
 echo "    devstack-git-archive: $DEVSTACK_ARCHIVE_URL"
 echo "    stack-git-archive: $STACK_ARCHIVE_URL"
 
-if [ ! -z "$DEVSTACK_ARCHIVE_URL" ];then
-    if [ ! -d "/home/ubuntu/devstack" ]; then
+if [ ! -z "$DEVSTACK_ARCHIVE_URL" ]; then
+    if [ -d "/home/ubuntu/devstack" ]; then
+        rm -rf /home/ubuntu/devstack
+    fi
+
+    if [ ! -f "/home/ubuntu/devstack.tar.gz" ]; then
         echo "Downloading devstack git archive: $DEVSTACK_ARCHIVE_URL"
         wget -O /home/ubuntu/devstack.tar.gz $DEVSTACK_ARCHIVE_URL
-        tar -zxf /home/ubuntu/devstack.tar.gz -C /home/ubuntu/
-        rm /home/ubuntu/devstack.tar.gz
+    else
+        echo "Found /home/ubuntu/devstack.tar.gz, will not download again."
     fi
+
+    tar -zxf /home/ubuntu/devstack.tar.gz -C /home/ubuntu/
+
     if [ -d "/home/ubuntu/devstack" ]; then
         echo "Updating devstack git repo"
         pushd /home/ubuntu/devstack
-        git reset --hard
-        git clean -f -d
-        git fetch
-        git checkout "$ZUUL_BRANCH" || echo "Failed to switch branch $ZUUL_BRANCH"
-        git pull
-        echo "Devstack final branch:"
-        git branch
-        echo "Devstack git log:"
-        git log -10 --pretty=format:"%h - %an, %ae,  %ar : %s"
+        if [ -d ".git" ]; then
+            git reset --hard
+            git clean -f -d
+            git fetch
+            git checkout "$ZUUL_BRANCH" || echo "Failed to switch branch $ZUUL_BRANCH"
+            git pull
+            echo "Devstack branch:"
+            git branch
+            echo "Devstack git log:"
+            git log -10 --pretty=format:"%h - %an, %ae,  %ar : %s"
+        else
+            echo "Skipping /home/ubuntu/devstack, not a git repo"
+        fi
         popd
     else
         echo "/home/ubuntu/devstack folder not found, not updating"
@@ -66,34 +77,38 @@ fi
 
 
 if [ ! -z "$STACK_ARCHIVE_URL" ]; then
-    if [ ! -d "/opt/stack" ]; then
+    if [ -d "/opt/stack" ]; then
+        rm -rf /opt/stack
+    fi
+
+    if [ ! -f "/home/ubuntu/stack.tar.gz" ]; then
         echo "Downloading stack git archive: $STACK_ARCHIVE_URL"
         wget -O /home/ubuntu/stack.tar.gz $STACK_ARCHIVE_URL
-        sudo tar -zxf /home/ubuntu/stack.tar.gz -C /opt/
-        sudo chown -R ubuntu /opt/stack
-        rm /home/ubuntu/stack.tar.gz
+    else
+        echo "Found /home/ubuntu/stack.tar.gz, will not download again."
     fi
+
+    sudo tar -zxf /home/ubuntu/stack.tar.gz -C /opt/
+    sudo chown -R ubuntu /opt/stack
+    
     if [ -d "/opt/stack" ]; then
         pushd /opt/stack
         find . -name *pyc -print0 | xargs -0 rm -f
         for i in $(ls -A); do
             if [ "$i" != "$PROJECT_NAME" ]; then
                 pushd "$i"
-                if [ -d ".git" ]
-                    then
-                        git reset --hard
-                        git clean -f -d
-                        git fetch
-                        git checkout "$ZUUL_BRANCH" || echo "Failed to switch branch $ZUUL_BRANCH"
-                        git pull
-                fi
-                echo "Folder: /opt/stack/$i"
-                echo "Git branch output:"
-                git branch
-                if ! [[ $i =~ .*noVNC.* ]]; then
-                    echo "Git Log output:"
-                    git status
+                if [ -d ".git" ]; then
+                    git reset --hard
+                    git clean -f -d
+                    git fetch
+                    git checkout "$ZUUL_BRANCH" || echo "Failed to switch branch $ZUUL_BRANCH"
+                    git pull
+                    echo "/opt/stack/$i branch:"
+                    git branch
+                    echo "/opt/stack/$i git log:"
                     git log -10 --pretty=format:"%h - %an, %ae,  %ar : %s"
+                else
+                    echo "Skipping /opt/stack/$i, not a git repo"
                 fi
                 popd
             fi
