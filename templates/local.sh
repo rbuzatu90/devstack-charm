@@ -24,6 +24,12 @@ nova flavor-list
 echo 'set global max_connections = 1000;' | mysql
 
 # Add DNS config to the private network
-subnet_id=`neutron net-show private | grep subnets | awk '{print $4}'`
+subnet_id=`neutron subnet-show private-subnet | grep ' id ' | awk '{print $4}'`
 neutron subnet-update $subnet_id --dns_nameservers list=true {{nameservers}}
 
+echo "Neutron networks:"
+neutron net-list
+for net in `neutron net-list -F name | grep -v '\-\-' | grep -v "name" | awk {'print $2'}`; do neutron net-show $net;done
+echo "Neutron subnetworks:"
+neutron subnet-list
+for subnet in `neutron subnet-list -F name | grep -v '\-\-' | grep -v "name" | awk {'print $2'}`; do neutron subnet-show $subnet; done
