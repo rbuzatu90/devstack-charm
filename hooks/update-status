@@ -2,10 +2,22 @@
 
 set +e
 
-source /home/ubuntu/devstack/functions
-source /home/ubuntu/devstack/functions-common
-source /home/ubuntu/devstack/poststack.params
 source /home/ubuntu/keystonerc
+
+TOP_DIR=/home/ubuntu/devstack
+source $TOP_DIR/functions
+source $TOP_DIR/functions-common
+source $TOP_DIR/inc/meta-config
+source $TOP_DIR/lib/stack
+source $TOP_DIR/stackrc
+source $TOP_DIR/lib/database
+source $TOP_DIR/lib/rpc_backend
+source $TOP_DIR/lib/apache
+source $TOP_DIR/lib/tls
+source $TOP_DIR/lib/infra
+source $TOP_DIR/lib/keystone
+source $TOP_DIR/lib/nova
+source $TOP_DIR/poststack.params
 
 NOVA_COUNT="2"
 OVS_COUNT="3"
@@ -44,8 +56,11 @@ fi
 # For master or Ocata branch activate cell_v2
 ZUUL_BRANCH=$(config-get zuul-branch)
 if [[ "$ZUUL_BRANCH" == "master" ]] || [[ "$ZUUL_BRANCH" == "stable/ocata" ]]; then
-       	echo "running: nova-manage cell_v2 --transport-url $transport_url"
-       	nova-manage cell_v2 simple_cell_setup --transport-url $transport_url >> /opt/stack/logs/screen/create_cell.log
+        echo "running: nova-manage cell_v2 --transport-url $transport_url"
+        nova-manage cell_v2 simple_cell_setup --transport-url $transport_url >> /opt/stack/logs/screen/create_cell.log
+        stop_nova_rest
+        start_nova_api
+        start_nova_rest
 fi
 
 # Configure tempest.conf
